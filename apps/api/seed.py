@@ -20,7 +20,7 @@ from models.tenant_settings import TenantSettings
 
 async def seed():
     settings = get_settings()
-    engine = create_async_engine(settings.DATABASE_URL)
+    engine = create_async_engine(settings.async_database_url)
 
     # テーブル作成（開発用）
     async with engine.begin() as conn:
