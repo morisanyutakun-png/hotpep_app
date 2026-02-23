@@ -1,3 +1,5 @@
+from urllib.parse import urlparse, urlunparse
+
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -10,15 +12,16 @@ class Settings(BaseSettings):
     def async_database_url(self) -> str:
         """Neon等から取得したURLを asyncpg ドライバー用に変換"""
         url = self.DATABASE_URL
+        # ドライバーをasyncpgに変換
         if url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif not url.startswith("postgresql+asyncpg://"):
             url = "postgresql+asyncpg://" + url
-        # asyncpgはsslmodeパラメータを認識しないので除去
-        url = url.replace("?sslmode=require", "").replace("&sslmode=require", "")
-        return url
+        # asyncpgはクエリパラメータ(sslmode, channel_binding等)を認識しないので全て除去
+        parsed = urlparse(url)
+        return urlunparse(parsed._replace(query=""))
 
     # JWT
     JWT_SECRET_KEY: str = "dev-secret-key-change-in-production"
