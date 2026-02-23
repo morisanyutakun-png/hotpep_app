@@ -16,6 +16,8 @@ class Settings(BaseSettings):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif not url.startswith("postgresql+asyncpg://"):
             url = "postgresql+asyncpg://" + url
+        # asyncpgはsslmodeパラメータを認識しないので除去
+        url = url.replace("?sslmode=require", "").replace("&sslmode=require", "")
         return url
 
     # JWT
