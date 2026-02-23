@@ -8,6 +8,14 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    display_name: str
+    tenant_id: str | None = None
+    role: str = "student"
+
+
 class TokenResponse(BaseSchema):
     access_token: str
     token_type: str = "bearer"

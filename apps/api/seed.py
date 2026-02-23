@@ -1,5 +1,7 @@
 """Seed script - サンプルデータ投入"""
 import asyncio
+import certifi
+import ssl
 import uuid
 from datetime import time, date, timezone, timedelta
 
@@ -20,7 +22,11 @@ from models.tenant_settings import TenantSettings
 
 async def seed():
     settings = get_settings()
-    engine = create_async_engine(settings.async_database_url)
+    connect_args = {}
+    if "neon.tech" in settings.DATABASE_URL:
+        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        connect_args["ssl"] = ssl_ctx
+    engine = create_async_engine(settings.async_database_url, connect_args=connect_args)
 
     # テーブル作成（開発用）
     async with engine.begin() as conn:

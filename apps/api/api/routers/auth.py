@@ -8,10 +8,60 @@ from core.security import verify_password, create_access_token, hash_password
 from core.deps import get_current_user
 from models.user import User
 from models.membership import Membership
-from schemas.auth import LoginRequest, TokenResponse, MeResponse, MembershipInfo, UserResponse
+from schemas.auth import LoginRequest, RegisterRequest, TokenResponse, MeResponse, MembershipInfo, UserResponse
 from schemas.common import APIResponse
+from models.tenant import Tenant
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.post("/register", response_model=APIResponse[TokenResponse])
+async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    """開発用: 認証不要のアカウント作成エンドポイント"""
+    # メールアドレス重複チェック
+    existing = await db.execute(select(User).where(User.email == body.email))
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="このメールアドレスは既に登録されています",
+        )
+
+    # ユーザー作成
+    user = User(
+        email=body.email,
+        hashed_password=hash_password(body.password),
+        display_name=body.display_name,
+        is_active=True,
+    )
+    db.add(user)
+    await db.flush()
+
+    # テナントが指定されていればメンバーシップも作成
+    if body.tenant_id:
+        tenant = await db.execute(select(Tenant).where(Tenant.id == body.tenant_id))
+        if tenant.scalar_one_or_none():
+            membership = Membership(
+                tenant_id=body.tenant_id,
+                user_id=user.id,
+                role=body.role,
+            )
+            db.add(membership)
+
+    await db.commit()
+
+    token = create_access_token({"sub": str(user.id)})
+    return APIResponse(data=TokenResponse(access_token=token))
+
+
+@router.get("/tenants", response_model=APIResponse[list[dict]])
+async def list_tenants(db: AsyncSession = Depends(get_db)):
+    """開発用: テナント一覧取得（認証不要）"""
+    result = await db.execute(select(Tenant).where(Tenant.is_active == True))
+    tenants = result.scalars().all()
+    return APIResponse(data=[
+        {"id": str(t.id), "name": t.name, "slug": t.slug}
+        for t in tenants
+    ])
 
 
 @router.post("/login", response_model=APIResponse[TokenResponse])

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -75,6 +76,16 @@ export default function LoginPage() {
             <p className="font-medium mb-1">デモアカウント:</p>
             <p>管理者: admin@example.com / admin123</p>
             <p>生徒: student1@example.com / student123</p>
+          </div>
+
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            アカウントがない？{" "}
+            <Link
+              href="/register"
+              className="text-orange-600 hover:text-orange-700 font-medium underline"
+            >
+              新規作成（開発用）
+            </Link>
           </div>
         </CardContent>
       </Card>
