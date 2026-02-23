@@ -1,16 +1,31 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from core.config import get_settings
+from db.session import engine
+from db.base import Base
+import models  # noqa: F401 - register all models with Base.metadata
 from api.routers import auth, spaces, layout, reservations, admin_settings, admin_dashboard
 
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Create tables on startup (safe: does nothing if tables already exist)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
 
 app = FastAPI(
     title="HotPep - 席予約SaaS API",
     description="マルチテナント対応の席予約システム",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # CORS
