@@ -4,7 +4,7 @@ from core.config import get_settings
 settings = get_settings()
 
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    settings.async_database_url,
     echo=settings.ENVIRONMENT == "development",
     pool_pre_ping=True,
     pool_size=5,
