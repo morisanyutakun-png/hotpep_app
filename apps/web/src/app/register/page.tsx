@@ -65,7 +65,8 @@ export default function RegisterPage() {
         localStorage.setItem("tenantId", data.tenant_id);
       }
       toast.success("アカウントを作成しました");
-      router.push("/");
+      // AuthProviderを確実にリフレッシュするためフルリロード
+      window.location.href = "/";
     } catch (err: any) {
       toast.error(err.message || "アカウント作成に失敗しました");
     } finally {

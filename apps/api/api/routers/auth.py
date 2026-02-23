@@ -39,11 +39,18 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 
     # テナント決定: 指定あればそれ、なければ既存の最初のテナント、なければ自動作成
     tenant_id = None
-    if body.tenant_id:
-        result = await db.execute(select(Tenant).where(Tenant.id == body.tenant_id))
-        tenant = result.scalar_one_or_none()
-        if tenant:
-            tenant_id = tenant.id
+
+    # tenant_idが有効なUUIDの場合のみ検索
+    if body.tenant_id and body.tenant_id.strip():
+        try:
+            import uuid
+            tid = uuid.UUID(body.tenant_id)
+            result = await db.execute(select(Tenant).where(Tenant.id == tid))
+            tenant = result.scalar_one_or_none()
+            if tenant:
+                tenant_id = tenant.id
+        except (ValueError, AttributeError):
+            pass  # 無効なUUIDは無視して自動割当に進む
 
     if not tenant_id:
         # 既存テナントを探す
@@ -51,22 +58,23 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
         tenant = result.scalar_one_or_none()
         if not tenant:
             # テナントが1つもなければ開発用テナントを自動作成
+            import uuid as uuid_mod
             tenant = Tenant(
                 name="開発テナント",
-                slug="dev-tenant",
+                slug=f"dev-tenant-{uuid_mod.uuid4().hex[:8]}",
                 description="開発用に自動作成されたテナント",
                 is_active=True,
             )
             db.add(tenant)
             await db.flush()
             # デフォルト設定も作成
-            settings = TenantSettings(
+            tenant_settings = TenantSettings(
                 tenant_id=tenant.id,
                 booking_deadline_minutes=10,
                 penalty_days=3,
                 max_concurrent_reservations=2,
             )
-            db.add(settings)
+            db.add(tenant_settings)
         tenant_id = tenant.id
 
     # メンバーシップ作成（必ず作る）
