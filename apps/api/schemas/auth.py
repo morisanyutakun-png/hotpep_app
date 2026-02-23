@@ -16,6 +16,12 @@ class RegisterRequest(BaseModel):
     role: str = "student"
 
 
+class RegisterResponse(BaseSchema):
+    access_token: str
+    token_type: str = "bearer"
+    tenant_id: str | None = None
+
+
 class TokenResponse(BaseSchema):
     access_token: str
     token_type: str = "bearer"

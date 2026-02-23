@@ -22,7 +22,7 @@ interface Space {
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, tenantId, isLoading: authLoading } = useAuth();
+  const { user, tenantId, isLoading: authLoading, logout } = useAuth();
   const apiFetch = useApiFetch();
 
   useEffect(() => {
@@ -31,16 +31,49 @@ export default function HomePage() {
     }
   }, [authLoading, user, router]);
 
-  const { data: spaces, isLoading } = useQuery({
+  const { data: spaces, isLoading, error } = useQuery({
     queryKey: ["spaces", tenantId],
     queryFn: () => apiFetch<Space[]>(`/tenants/${tenantId}/spaces`),
     enabled: !!tenantId && !!user,
+    retry: false,
   });
 
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">読み込み中...</div>
+      </div>
+    );
+  }
+
+  if (!tenantId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50/50 to-amber-50/50">
+        <Header />
+        <main className="max-w-7xl mx-auto px-4 py-8">
+          <Card className="text-center py-12">
+            <CardContent className="space-y-4">
+              <p className="text-lg font-medium text-gray-900">テナントが設定されていません</p>
+              <p className="text-muted-foreground">
+                アカウントにテナントが紐づいていません。新しいアカウントを作成してください。
+              </p>
+              <div className="flex justify-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => { logout(); router.push("/login"); }}
+                >
+                  ログアウト
+                </Button>
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600"
+                  onClick={() => { logout(); router.push("/register"); }}
+                >
+                  アカウント再作成
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
       </div>
     );
   }

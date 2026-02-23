@@ -49,7 +49,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const data = await apiFetch<{ access_token: string }>("/auth/register", {
+      const data = await apiFetch<{ access_token: string; tenant_id: string | null }>("/auth/register", {
         method: "POST",
         body: JSON.stringify({
           email,
@@ -59,10 +59,10 @@ export default function RegisterPage() {
           role,
         }),
       });
-      // トークンを保存してログイン状態にする
+      // トークンとテナントIDを保存してログイン状態にする
       localStorage.setItem("token", data.access_token);
-      if (tenantId) {
-        localStorage.setItem("tenantId", tenantId);
+      if (data.tenant_id) {
+        localStorage.setItem("tenantId", data.tenant_id);
       }
       toast.success("アカウントを作成しました");
       router.push("/");
@@ -123,21 +123,28 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="tenant">所属テナント（任意）</Label>
-              <Select value={tenantId} onValueChange={setTenantId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="テナントを選択" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tenants.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {tenants.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="tenant">所属テナント</Label>
+                <Select value={tenantId} onValueChange={setTenantId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="テナントを選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tenants.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {tenants.length === 0 && (
+              <div className="p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                テナントが未作成のため、自動的に開発用テナントが作成されます
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="role">ロール</Label>

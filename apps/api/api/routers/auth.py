@@ -8,14 +8,15 @@ from core.security import verify_password, create_access_token, hash_password
 from core.deps import get_current_user
 from models.user import User
 from models.membership import Membership
-from schemas.auth import LoginRequest, RegisterRequest, TokenResponse, MeResponse, MembershipInfo, UserResponse
+from schemas.auth import LoginRequest, RegisterRequest, RegisterResponse, TokenResponse, MeResponse, MembershipInfo, UserResponse
 from schemas.common import APIResponse
 from models.tenant import Tenant
+from models.tenant_settings import TenantSettings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=APIResponse[TokenResponse])
+@router.post("/register", response_model=APIResponse[RegisterResponse])
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """開発用: 認証不要のアカウント作成エンドポイント"""
     # メールアドレス重複チェック
@@ -36,21 +37,53 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     db.add(user)
     await db.flush()
 
-    # テナントが指定されていればメンバーシップも作成
+    # テナント決定: 指定あればそれ、なければ既存の最初のテナント、なければ自動作成
+    tenant_id = None
     if body.tenant_id:
-        tenant = await db.execute(select(Tenant).where(Tenant.id == body.tenant_id))
-        if tenant.scalar_one_or_none():
-            membership = Membership(
-                tenant_id=body.tenant_id,
-                user_id=user.id,
-                role=body.role,
+        result = await db.execute(select(Tenant).where(Tenant.id == body.tenant_id))
+        tenant = result.scalar_one_or_none()
+        if tenant:
+            tenant_id = tenant.id
+
+    if not tenant_id:
+        # 既存テナントを探す
+        result = await db.execute(select(Tenant).where(Tenant.is_active == True).limit(1))
+        tenant = result.scalar_one_or_none()
+        if not tenant:
+            # テナントが1つもなければ開発用テナントを自動作成
+            tenant = Tenant(
+                name="開発テナント",
+                slug="dev-tenant",
+                description="開発用に自動作成されたテナント",
+                is_active=True,
             )
-            db.add(membership)
+            db.add(tenant)
+            await db.flush()
+            # デフォルト設定も作成
+            settings = TenantSettings(
+                tenant_id=tenant.id,
+                booking_deadline_minutes=10,
+                penalty_days=3,
+                max_concurrent_reservations=2,
+            )
+            db.add(settings)
+        tenant_id = tenant.id
+
+    # メンバーシップ作成（必ず作る）
+    membership = Membership(
+        tenant_id=tenant_id,
+        user_id=user.id,
+        role=body.role,
+    )
+    db.add(membership)
 
     await db.commit()
 
     token = create_access_token({"sub": str(user.id)})
-    return APIResponse(data=TokenResponse(access_token=token))
+    return APIResponse(data=RegisterResponse(
+        access_token=token,
+        tenant_id=str(tenant_id),
+    ))
 
 
 @router.get("/tenants", response_model=APIResponse[list[dict]])
