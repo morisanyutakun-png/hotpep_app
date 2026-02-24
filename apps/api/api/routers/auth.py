@@ -19,79 +19,90 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/register", response_model=APIResponse[RegisterResponse])
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     """開発用: 認証不要のアカウント作成エンドポイント"""
-    # メールアドレス重複チェック
-    existing = await db.execute(select(User).where(User.email == body.email))
-    if existing.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="このメールアドレスは既に登録されています",
+    import uuid as uuid_mod
+    import traceback
+
+    try:
+        # メールアドレス重複チェック
+        existing = await db.execute(select(User).where(User.email == body.email))
+        if existing.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="このメールアドレスは既に登録されています",
+            )
+
+        # ユーザー作成
+        user = User(
+            email=body.email,
+            hashed_password=hash_password(body.password),
+            display_name=body.display_name,
+            is_active=True,
         )
+        db.add(user)
+        await db.flush()
 
-    # ユーザー作成
-    user = User(
-        email=body.email,
-        hashed_password=hash_password(body.password),
-        display_name=body.display_name,
-        is_active=True,
-    )
-    db.add(user)
-    await db.flush()
+        # テナント決定: 指定あればそれ、なければ既存の最初のテナント、なければ自動作成
+        tenant_id = None
 
-    # テナント決定: 指定あればそれ、なければ既存の最初のテナント、なければ自動作成
-    tenant_id = None
+        # tenant_idが有効なUUIDの場合のみ検索
+        if body.tenant_id and body.tenant_id.strip():
+            try:
+                tid = uuid_mod.UUID(body.tenant_id)
+                result = await db.execute(select(Tenant).where(Tenant.id == tid))
+                tenant = result.scalar_one_or_none()
+                if tenant:
+                    tenant_id = tenant.id
+            except (ValueError, AttributeError):
+                pass  # 無効なUUIDは無視して自動割当に進む
 
-    # tenant_idが有効なUUIDの場合のみ検索
-    if body.tenant_id and body.tenant_id.strip():
-        try:
-            import uuid
-            tid = uuid.UUID(body.tenant_id)
-            result = await db.execute(select(Tenant).where(Tenant.id == tid))
+        if not tenant_id:
+            # 既存テナントを探す
+            result = await db.execute(select(Tenant).where(Tenant.is_active == True).limit(1))
             tenant = result.scalar_one_or_none()
-            if tenant:
-                tenant_id = tenant.id
-        except (ValueError, AttributeError):
-            pass  # 無効なUUIDは無視して自動割当に進む
+            if not tenant:
+                # テナントが1つもなければ開発用テナントを自動作成
+                tenant = Tenant(
+                    name="開発テナント",
+                    slug=f"dev-tenant-{uuid_mod.uuid4().hex[:8]}",
+                    description="開発用に自動作成されたテナント",
+                    is_active=True,
+                )
+                db.add(tenant)
+                await db.flush()
+                # デフォルト設定も作成
+                tenant_settings = TenantSettings(
+                    tenant_id=tenant.id,
+                    booking_deadline_minutes=10,
+                    penalty_days=3,
+                    max_concurrent_reservations=2,
+                )
+                db.add(tenant_settings)
+            tenant_id = tenant.id
 
-    if not tenant_id:
-        # 既存テナントを探す
-        result = await db.execute(select(Tenant).where(Tenant.is_active == True).limit(1))
-        tenant = result.scalar_one_or_none()
-        if not tenant:
-            # テナントが1つもなければ開発用テナントを自動作成
-            import uuid as uuid_mod
-            tenant = Tenant(
-                name="開発テナント",
-                slug=f"dev-tenant-{uuid_mod.uuid4().hex[:8]}",
-                description="開発用に自動作成されたテナント",
-                is_active=True,
-            )
-            db.add(tenant)
-            await db.flush()
-            # デフォルト設定も作成
-            tenant_settings = TenantSettings(
-                tenant_id=tenant.id,
-                booking_deadline_minutes=10,
-                penalty_days=3,
-                max_concurrent_reservations=2,
-            )
-            db.add(tenant_settings)
-        tenant_id = tenant.id
+        # メンバーシップ作成（必ず作る）
+        membership = Membership(
+            tenant_id=tenant_id,
+            user_id=user.id,
+            role=body.role,
+        )
+        db.add(membership)
 
-    # メンバーシップ作成（必ず作る）
-    membership = Membership(
-        tenant_id=tenant_id,
-        user_id=user.id,
-        role=body.role,
-    )
-    db.add(membership)
+        await db.commit()
 
-    await db.commit()
-
-    token = create_access_token({"sub": str(user.id)})
-    return APIResponse(data=RegisterResponse(
-        access_token=token,
-        tenant_id=str(tenant_id),
-    ))
+        token = create_access_token({"sub": str(user.id)})
+        return APIResponse(data=RegisterResponse(
+            access_token=token,
+            tenant_id=str(tenant_id),
+        ))
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        error_detail = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_detail,
+        )
 
 
 @router.get("/tenants", response_model=APIResponse[list[dict]])
