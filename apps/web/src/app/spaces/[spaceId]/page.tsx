@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, addDays } from "date-fns";
@@ -53,6 +53,25 @@ interface AvailabilityData {
   seats: SeatAvailability[];
 }
 
+// ステップの進捗状態を判定するヘルパー
+function getStepState(
+  step: number,
+  selectedDate: string,
+  selectedTimeSlotId: string | null,
+  selectedSeatId: string | null
+): "completed" | "active" | "upcoming" {
+  if (step === 1) return selectedDate ? "completed" : "active";
+  if (step === 2) {
+    if (selectedTimeSlotId) return "completed";
+    return selectedDate ? "active" : "upcoming";
+  }
+  if (step === 3) {
+    if (selectedSeatId) return "completed";
+    return selectedTimeSlotId ? "active" : "upcoming";
+  }
+  return "upcoming";
+}
+
 export default function SpaceReservationPage() {
   const params = useParams();
   const router = useRouter();
@@ -62,14 +81,20 @@ export default function SpaceReservationPage() {
   const queryClient = useQueryClient();
 
   // 日付候補（今日から7日間）
-  const dateOptions = Array.from({ length: 7 }, (_, i) => {
-    const d = addDays(new Date(), i);
-    return {
-      value: format(d, "yyyy-MM-dd"),
-      label: format(d, "M/d (EEE)", { locale: ja }),
-      isToday: i === 0,
-    };
-  });
+  const dateOptions = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const d = addDays(new Date(), i);
+        return {
+          value: format(d, "yyyy-MM-dd"),
+          label: format(d, "M/d (EEE)", { locale: ja }),
+          dayLabel: format(d, "d"),
+          weekday: format(d, "EEE", { locale: ja }),
+          isToday: i === 0,
+        };
+      }),
+    []
+  );
 
   const [selectedDate, setSelectedDate] = useState(dateOptions[0].value);
   const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string | null>(null);
@@ -96,20 +121,31 @@ export default function SpaceReservationPage() {
   });
 
   // 時間帯一覧
-  const { data: timeSlots } = useQuery({
+  const {
+    data: timeSlots,
+    isLoading: slotsLoading,
+    isError: slotsError,
+    refetch: refetchSlots,
+  } = useQuery({
     queryKey: ["timeSlots", spaceId],
     queryFn: () => apiFetch<TimeSlot[]>(`/spaces/${spaceId}/time-slots`),
     enabled: !!user,
+    retry: 2,
   });
 
   // 空き状況
-  const { data: availability, isLoading: availLoading } = useQuery({
+  const {
+    data: availability,
+    isLoading: availLoading,
+    isError: availError,
+  } = useQuery({
     queryKey: ["availability", spaceId, selectedDate, selectedTimeSlotId],
     queryFn: () =>
       apiFetch<AvailabilityData>(
         `/spaces/${spaceId}/availability?date=${selectedDate}&time_slot_id=${selectedTimeSlotId}`
       ),
     enabled: !!user && !!selectedTimeSlotId,
+    retry: 1,
   });
 
   // 自動選択: 最初の時間帯
@@ -119,10 +155,11 @@ export default function SpaceReservationPage() {
     }
   }, [timeSlots, selectedTimeSlotId]);
 
-  // 日付・時間帯変更時に座席選択をリセット
+  // 日付変更時: 座席選択のみリセット（時間帯はそのまま）
   useEffect(() => {
     setSelectedSeatId(null);
     setSelectedSeatLabel(null);
+    setIsConfirming(false);
   }, [selectedDate, selectedTimeSlotId]);
 
   // 予約実行
@@ -139,7 +176,7 @@ export default function SpaceReservationPage() {
       }),
     onSuccess: () => {
       toast.success("予約が完了しました！", {
-        description: `${selectedSeatLabel} 席を予約しました`,
+        description: `${format(new Date(selectedDate), "M月d日", { locale: ja })} ${selectedTimeSlot?.label} - ${selectedSeatLabel} 席`,
       });
       setSelectedSeatId(null);
       setSelectedSeatLabel(null);
@@ -153,7 +190,11 @@ export default function SpaceReservationPage() {
   });
 
   const selectedTimeSlot = timeSlots?.find((t) => t.id === selectedTimeSlotId);
+  const hasTimeSlots = timeSlots && timeSlots.length > 0;
   const canReserve = selectedDate && selectedTimeSlotId && selectedSeatId;
+
+  // 空席数カウント
+  const availableCount = availability?.seats?.filter((s) => s.status === "available").length ?? 0;
 
   if (authLoading || !user) {
     return (
@@ -162,6 +203,21 @@ export default function SpaceReservationPage() {
       </div>
     );
   }
+
+  const step1State = getStepState(1, selectedDate, selectedTimeSlotId, selectedSeatId);
+  const step2State = getStepState(2, selectedDate, selectedTimeSlotId, selectedSeatId);
+  const step3State = getStepState(3, selectedDate, selectedTimeSlotId, selectedSeatId);
+
+  const stepBadgeClass = (state: "completed" | "active" | "upcoming") => {
+    if (state === "completed") return "bg-green-500 text-white";
+    if (state === "active") return "bg-orange-500 text-white";
+    return "bg-gray-300 text-gray-500";
+  };
+
+  const stepIcon = (state: "completed" | "active" | "upcoming", num: number) => {
+    if (state === "completed") return "✓";
+    return String(num);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50/50 to-amber-50/50">
@@ -181,33 +237,40 @@ export default function SpaceReservationPage() {
 
         <div className="grid lg:grid-cols-[1fr_320px] gap-6">
           {/* 左: メインエリア */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Step 1: 日付選択 */}
-            <Card>
+            <Card className={step1State === "active" ? "ring-2 ring-orange-200" : ""}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-bold">1</span>
+                  <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${stepBadgeClass(step1State)}`}>
+                    {stepIcon(step1State, 1)}
+                  </span>
                   日付を選択
+                  {selectedDate && (
+                    <span className="text-xs font-normal text-muted-foreground ml-auto">
+                      {format(new Date(selectedDate), "M月d日 (EEE)", { locale: ja })}
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2 overflow-x-auto pb-1">
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                   {dateOptions.map((d) => (
                     <button
                       key={d.value}
                       onClick={() => setSelectedDate(d.value)}
                       className={`
-                        flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all
+                        flex-shrink-0 w-16 py-2.5 rounded-xl text-center transition-all duration-150
                         ${selectedDate === d.value
-                          ? "bg-orange-500 text-white shadow-sm"
-                          : "bg-white border hover:border-orange-300 hover:bg-orange-50"
+                          ? "bg-orange-500 text-white shadow-md shadow-orange-200 scale-105"
+                          : "bg-white border border-gray-200 hover:border-orange-300 hover:bg-orange-50"
                         }
                       `}
                     >
-                      {d.label}
-                      {d.isToday && (
-                        <span className="block text-[10px] opacity-80">今日</span>
-                      )}
+                      <span className={`block text-[11px] ${selectedDate === d.value ? "text-orange-100" : "text-muted-foreground"}`}>
+                        {d.isToday ? "今日" : d.weekday}
+                      </span>
+                      <span className="block text-lg font-bold leading-tight">{d.dayLabel}</span>
                     </button>
                   ))}
                 </div>
@@ -215,54 +278,136 @@ export default function SpaceReservationPage() {
             </Card>
 
             {/* Step 2: 時間帯選択 */}
-            <Card>
+            <Card className={step2State === "active" ? "ring-2 ring-orange-200" : ""}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-bold">2</span>
+                  <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${stepBadgeClass(step2State)}`}>
+                    {stepIcon(step2State, 2)}
+                  </span>
                   時間帯を選択
+                  {selectedTimeSlot && (
+                    <span className="text-xs font-normal text-muted-foreground ml-auto">
+                      {selectedTimeSlot.label}
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {timeSlots ? (
-                  <div className="flex flex-wrap gap-2">
-                    {timeSlots.map((slot) => (
-                      <button
-                        key={slot.id}
-                        onClick={() => setSelectedTimeSlotId(slot.id)}
-                        className={`
-                          px-4 py-2 rounded-lg text-sm font-medium transition-all
-                          ${selectedTimeSlotId === slot.id
-                            ? "bg-orange-500 text-white shadow-sm"
-                            : "bg-white border hover:border-orange-300 hover:bg-orange-50"
-                          }
-                        `}
-                      >
-                        {slot.label}
-                      </button>
-                    ))}
+                {slotsLoading ? (
+                  <div className="flex items-center gap-2 py-4 justify-center text-sm text-muted-foreground">
+                    <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                    時間帯を読み込み中...
+                  </div>
+                ) : slotsError ? (
+                  <div className="text-center py-4 space-y-2">
+                    <p className="text-sm text-red-500">時間帯の読み込みに失敗しました</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchSlots()}
+                      className="text-xs"
+                    >
+                      再読み込み
+                    </Button>
+                  </div>
+                ) : hasTimeSlots ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {timeSlots.map((slot) => {
+                      const isSelected = selectedTimeSlotId === slot.id;
+                      return (
+                        <button
+                          key={slot.id}
+                          onClick={() => setSelectedTimeSlotId(slot.id)}
+                          className={`
+                            relative px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150
+                            ${isSelected
+                              ? "bg-orange-500 text-white shadow-md shadow-orange-200 scale-[1.02]"
+                              : "bg-white border border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                            }
+                          `}
+                        >
+                          <span className="block font-semibold">{slot.label}</span>
+                          {isSelected && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center text-[10px] text-white shadow-sm">
+                              ✓
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div className="text-muted-foreground text-sm">時間帯を読み込み中...</div>
+                  <div className="text-center py-6 space-y-2">
+                    <div className="text-3xl">🕐</div>
+                    <p className="text-sm text-muted-foreground">
+                      このスペースにはまだ時間帯が設定されていません
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      管理者に時間帯の追加を依頼してください
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Step 3: 座席選択 */}
-            <Card>
+            <Card className={step3State === "active" ? "ring-2 ring-orange-200" : ""}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-bold">3</span>
+                  <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${stepBadgeClass(step3State)}`}>
+                    {stepIcon(step3State, 3)}
+                  </span>
                   座席を選択
+                  {selectedSeatLabel && (
+                    <Badge className="bg-blue-100 text-blue-700 border-blue-300 ml-auto text-xs">
+                      {selectedSeatLabel}
+                    </Badge>
+                  )}
+                  {!selectedSeatId && selectedTimeSlotId && availability && (
+                    <span className="text-xs font-normal text-muted-foreground ml-auto">
+                      空席 {availableCount} 席
+                    </span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {!selectedTimeSlotId ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    時間帯を選択すると座席マップが表示されます
+                  <div className="text-center py-8 space-y-2">
+                    <div className="text-3xl opacity-50">👆</div>
+                    <p className="text-sm text-muted-foreground">
+                      上の時間帯を選択すると座席マップが表示されます
+                    </p>
                   </div>
                 ) : availLoading ? (
-                  <div className="text-center py-8 text-muted-foreground animate-pulse">
+                  <div className="flex items-center gap-2 py-8 justify-center text-sm text-muted-foreground">
+                    <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
                     空き状況を確認中...
+                  </div>
+                ) : availError ? (
+                  <div className="text-center py-8 space-y-2">
+                    <p className="text-sm text-red-500">空き状況の取得に失敗しました</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        queryClient.invalidateQueries({
+                          queryKey: ["availability", spaceId, selectedDate, selectedTimeSlotId],
+                        })
+                      }
+                      className="text-xs"
+                    >
+                      再読み込み
+                    </Button>
+                  </div>
+                ) : availableCount === 0 && !selectedSeatId ? (
+                  <div className="text-center py-8 space-y-2">
+                    <div className="text-3xl">😢</div>
+                    <p className="text-sm text-muted-foreground">
+                      この時間帯は満席です
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      別の時間帯や日付をお試しください
+                    </p>
                   </div>
                 ) : (
                   <SeatMap
@@ -286,29 +431,37 @@ export default function SpaceReservationPage() {
 
           {/* 右: 予約サマリー (Sticky) */}
           <div className="lg:sticky lg:top-20 lg:self-start">
-            <Card className="shadow-lg border-orange-200">
+            <Card className={`shadow-lg transition-colors ${canReserve ? "border-orange-400 bg-orange-50/30" : "border-orange-200"}`}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">予約内容</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  📋 予約内容
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">スペース</span>
                     <span className="font-medium">{space?.name || "-"}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">日付</span>
                     <span className="font-medium">
                       {format(new Date(selectedDate), "M月d日 (EEE)", { locale: ja })}
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">時間帯</span>
-                    <span className="font-medium">
-                      {selectedTimeSlot?.label || "未選択"}
+                    <span className={`font-medium ${selectedTimeSlot ? "" : "text-gray-400"}`}>
+                      {selectedTimeSlot ? (
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200">
+                          {selectedTimeSlot.label}
+                        </Badge>
+                      ) : (
+                        "未選択"
+                      )}
                     </span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">座席</span>
                     <span className="font-medium">
                       {selectedSeatLabel ? (
@@ -316,34 +469,39 @@ export default function SpaceReservationPage() {
                           {selectedSeatLabel}
                         </Badge>
                       ) : (
-                        "未選択"
+                        <span className="text-gray-400">未選択</span>
                       )}
                     </span>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t">
+                <div className="pt-3 border-t">
                   {!canReserve && (
-                    <p className="text-xs text-muted-foreground mb-2 text-center">
-                      {!selectedTimeSlotId
-                        ? "時間帯を選択してください"
+                    <p className="text-xs text-muted-foreground mb-3 text-center">
+                      {!hasTimeSlots
+                        ? "時間帯が設定されていません"
+                        : !selectedTimeSlotId
+                        ? "② 時間帯を選択してください"
                         : !selectedSeatId
-                        ? "座席を選択してください"
+                        ? "③ 座席を選択してください"
                         : ""}
                     </p>
                   )}
 
                   {isConfirming ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-center font-medium text-orange-600">
-                        この内容で予約しますか？
-                      </p>
+                    <div className="space-y-3">
+                      <div className="bg-orange-100 rounded-lg px-3 py-2 text-center">
+                        <p className="text-sm font-medium text-orange-700">
+                          この内容で予約しますか？
+                        </p>
+                      </div>
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           className="flex-1"
                           onClick={() => setIsConfirming(false)}
+                          disabled={reservationMutation.isPending}
                         >
                           戻る
                         </Button>
@@ -353,13 +511,24 @@ export default function SpaceReservationPage() {
                           onClick={() => reservationMutation.mutate()}
                           disabled={reservationMutation.isPending}
                         >
-                          {reservationMutation.isPending ? "処理中..." : "確定する"}
+                          {reservationMutation.isPending ? (
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              処理中...
+                            </span>
+                          ) : (
+                            "確定する"
+                          )}
                         </Button>
                       </div>
                     </div>
                   ) : (
                     <Button
-                      className="w-full bg-orange-500 hover:bg-orange-600"
+                      className={`w-full transition-all duration-200 ${
+                        canReserve
+                          ? "bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-200"
+                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      }`}
                       disabled={!canReserve}
                       onClick={() => setIsConfirming(true)}
                     >
