@@ -20,7 +20,7 @@ from schemas.reservation import (
     SeatAvailability,
     TimeSlotResponse,
 )
-from schemas.common import APIResponse
+from schemas.common import APIResponse, BaseSchema
 
 router = APIRouter(tags=["reservations"])
 
@@ -266,3 +266,144 @@ async def admin_mark_no_show(
     )
     reservation = result.scalar_one()
     return APIResponse(data=_to_reservation_response(reservation))
+
+
+# --- Timeline endpoint ---
+
+
+class TimelineSeatInfo(BaseSchema):
+    id: UUID
+    label: str
+    seat_type: str
+    is_enabled: bool
+
+
+class TimelineSlotInfo(BaseSchema):
+    id: UUID
+    label: str
+    start_time: str
+    end_time: str
+    display_order: int
+
+
+class TimelineCellReservation(BaseSchema):
+    id: UUID
+    status: str
+    user_display_name: str | None = None
+    user_id: UUID | None = None
+
+
+class TimelineCell(BaseSchema):
+    seat_id: UUID
+    time_slot_id: UUID
+    reservation: TimelineCellReservation | None = None
+
+
+class TimelineSpaceInfo(BaseSchema):
+    id: UUID
+    name: str
+
+
+class TimelineResponse(BaseSchema):
+    spaces: list[TimelineSpaceInfo] = []
+    seats: list[TimelineSeatInfo] = []
+    time_slots: list[TimelineSlotInfo] = []
+    cells: list[TimelineCell] = []
+    date: date
+
+
+@router.get("/admin/reservations/timeline", response_model=APIResponse[TimelineResponse])
+async def admin_timeline(
+    date: date = Query(...),
+    space_id: UUID | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    admin: tuple = Depends(require_admin),
+):
+    """タイムライン形式で予約状況を取得（横: 座席、縦: 時間帯）"""
+    user, tenant_id = admin
+
+    # テナントのスペース一覧
+    space_query = select(Space).where(
+        Space.tenant_id == tenant_id,
+        Space.is_active == True,
+    )
+    if space_id:
+        space_query = space_query.where(Space.id == space_id)
+    space_result = await db.execute(space_query.order_by(Space.name))
+    spaces = space_result.scalars().all()
+
+    if not spaces:
+        return APIResponse(data=TimelineResponse(
+            spaces=[], seats=[], time_slots=[], cells=[], date=date,
+        ))
+
+    space_ids = [s.id for s in spaces]
+
+    # 座席取得（有効なもの）
+    seat_result = await db.execute(
+        select(Seat)
+        .where(Seat.space_id.in_(space_ids), Seat.is_enabled == True)
+        .order_by(Seat.label)
+    )
+    seats = seat_result.scalars().all()
+
+    # タイムスロット取得
+    ts_result = await db.execute(
+        select(TimeSlot)
+        .where(TimeSlot.space_id.in_(space_ids), TimeSlot.is_active == True)
+        .order_by(TimeSlot.display_order, TimeSlot.start_time)
+    )
+    time_slots = ts_result.scalars().all()
+
+    # 予約取得（当日、対象スペース、キャンセル以外）
+    res_result = await db.execute(
+        select(Reservation)
+        .options(selectinload(Reservation.user))
+        .where(
+            Reservation.tenant_id == tenant_id,
+            Reservation.date == date,
+            Reservation.space_id.in_(space_ids),
+            Reservation.status.in_(["booked", "checked_in", "used", "no_show"]),
+        )
+    )
+    reservations = res_result.scalars().all()
+
+    # 予約をseat_id + time_slot_idでマッピング
+    res_map: dict[tuple, Reservation] = {}
+    for r in reservations:
+        res_map[(r.seat_id, r.time_slot_id)] = r
+
+    # セルを組み立て
+    cells = []
+    for seat in seats:
+        for ts in time_slots:
+            if ts.space_id != seat.space_id:
+                continue
+            r = res_map.get((seat.id, ts.id))
+            cell = TimelineCell(
+                seat_id=seat.id,
+                time_slot_id=ts.id,
+                reservation=TimelineCellReservation(
+                    id=r.id,
+                    status=r.status,
+                    user_display_name=r.user.display_name if r.user else None,
+                    user_id=r.user_id,
+                ) if r else None,
+            )
+            cells.append(cell)
+
+    return APIResponse(data=TimelineResponse(
+        spaces=[TimelineSpaceInfo(id=s.id, name=s.name) for s in spaces],
+        seats=[TimelineSeatInfo(
+            id=s.id, label=s.label, seat_type=s.seat_type, is_enabled=s.is_enabled,
+        ) for s in seats],
+        time_slots=[TimelineSlotInfo(
+            id=ts.id,
+            label=ts.label,
+            start_time=ts.start_time.strftime("%H:%M"),
+            end_time=ts.end_time.strftime("%H:%M"),
+            display_order=ts.display_order,
+        ) for ts in time_slots],
+        cells=cells,
+        date=date,
+    ))
