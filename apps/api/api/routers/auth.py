@@ -8,7 +8,7 @@ from core.security import verify_password, create_access_token, hash_password
 from core.deps import get_current_user
 from models.user import User
 from models.membership import Membership
-from schemas.auth import LoginRequest, RegisterRequest, RegisterResponse, TokenResponse, MeResponse, MembershipInfo, UserResponse
+from schemas.auth import LoginRequest, RegisterRequest, RegisterResponse, TokenResponse, MeResponse, MembershipInfo, UserResponse, SetupPasswordRequest, CreateTenantRequest, TenantResponse
 from schemas.common import APIResponse
 from models.tenant import Tenant
 from models.tenant_settings import TenantSettings
@@ -114,6 +114,67 @@ async def list_tenants(db: AsyncSession = Depends(get_db)):
         {"id": str(t.id), "name": t.name, "slug": t.slug}
         for t in tenants
     ])
+
+
+SETUP_PASSWORD = "101men"
+
+
+@router.post("/verify-setup-password", response_model=APIResponse[dict])
+async def verify_setup_password(body: SetupPasswordRequest):
+    """セットアップパスワードを検証する"""
+    if body.password != SETUP_PASSWORD:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="セットアップパスワードが正しくありません",
+        )
+    return APIResponse(data={"verified": True})
+
+
+@router.post("/tenants/create", response_model=APIResponse[TenantResponse])
+async def create_tenant(body: CreateTenantRequest, db: AsyncSession = Depends(get_db)):
+    """新しいテナントを作成する（セットアップパスワード認証付き）"""
+    # セットアップパスワード検証
+    if body.setup_password != SETUP_PASSWORD:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="セットアップパスワードが正しくありません",
+        )
+
+    # slug重複チェック
+    existing = await db.execute(select(Tenant).where(Tenant.slug == body.slug))
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="このスラッグは既に使用されています",
+        )
+
+    # テナント作成
+    tenant = Tenant(
+        name=body.name,
+        slug=body.slug,
+        description=body.description,
+        is_active=True,
+    )
+    db.add(tenant)
+    await db.flush()
+
+    # デフォルト設定を作成
+    tenant_settings = TenantSettings(
+        tenant_id=tenant.id,
+        booking_deadline_minutes=10,
+        penalty_days=3,
+        max_concurrent_reservations=2,
+    )
+    db.add(tenant_settings)
+    await db.commit()
+    await db.refresh(tenant)
+
+    return APIResponse(data=TenantResponse(
+        id=tenant.id,
+        name=tenant.name,
+        slug=tenant.slug,
+        description=tenant.description,
+    ))
 
 
 @router.post("/login", response_model=APIResponse[TokenResponse])

@@ -3,6 +3,24 @@ from uuid import UUID
 from schemas.common import BaseSchema, TimestampSchema
 
 
+class SetupPasswordRequest(BaseModel):
+    password: str
+
+
+class CreateTenantRequest(BaseModel):
+    setup_password: str
+    name: str
+    slug: str
+    description: str | None = None
+
+
+class TenantResponse(BaseSchema):
+    id: UUID
+    name: str
+    slug: str
+    description: str | None = None
+
+
 class LoginRequest(BaseModel):
     email: str
     password: str

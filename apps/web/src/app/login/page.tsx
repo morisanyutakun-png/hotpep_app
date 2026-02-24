@@ -84,7 +84,7 @@ export default function LoginPage() {
               href="/register"
               className="text-orange-600 hover:text-orange-700 font-medium underline"
             >
-              新規作成（開発用）
+              新規登録
             </Link>
           </div>
         </CardContent>
