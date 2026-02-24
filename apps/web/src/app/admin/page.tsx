@@ -102,7 +102,22 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick links */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link href="/admin/students">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer group h-full">
+              <CardHeader>
+                <CardTitle className="text-lg group-hover:text-orange-600">
+                  👩‍🎓 生徒管理
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  生徒アカウントの登録・管理・ログイン
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
           <Link href="/admin/reservations">
             <Card className="hover:shadow-md transition-shadow cursor-pointer group h-full">
               <CardHeader>

@@ -8,7 +8,7 @@ from core.config import get_settings
 from db.session import engine
 from db.base import Base
 import models  # noqa: F401 - register all models with Base.metadata
-from api.routers import auth, spaces, layout, reservations, admin_settings, admin_dashboard
+from api.routers import auth, spaces, layout, reservations, admin_settings, admin_dashboard, admin_students
 
 settings = get_settings()
 
@@ -44,6 +44,7 @@ app.include_router(layout.router)
 app.include_router(reservations.router)
 app.include_router(admin_settings.router)
 app.include_router(admin_dashboard.router)
+app.include_router(admin_students.router)
 
 
 @app.exception_handler(Exception)
