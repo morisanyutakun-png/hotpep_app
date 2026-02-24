@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ interface Tenant {
 }
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -38,36 +36,49 @@ export default function RegisterPage() {
   const [role, setRole] = useState("student");
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
+  const addLog = (msg: string) => {
+    setDebugLog((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+  };
 
   useEffect(() => {
+    addLog("テナント一覧を取得中...");
     apiFetch<Tenant[]>("/auth/tenants")
-      .then(setTenants)
-      .catch(() => {});
+      .then((data) => {
+        setTenants(data);
+        addLog(`テナント取得成功: ${JSON.stringify(data)}`);
+      })
+      .catch((err) => {
+        addLog(`テナント取得失敗: ${err.message}`);
+      });
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    const payload = {
+      email,
+      password,
+      display_name: displayName,
+      tenant_id: tenantId || null,
+      role,
+    };
+    addLog(`送信データ: ${JSON.stringify(payload)}`);
     try {
       const data = await apiFetch<{ access_token: string; tenant_id: string | null }>("/auth/register", {
         method: "POST",
-        body: JSON.stringify({
-          email,
-          password,
-          display_name: displayName,
-          tenant_id: tenantId || null,
-          role,
-        }),
+        body: JSON.stringify(payload),
       });
-      // トークンとテナントIDを保存してログイン状態にする
+      addLog(`成功: ${JSON.stringify(data)}`);
       localStorage.setItem("token", data.access_token);
       if (data.tenant_id) {
         localStorage.setItem("tenantId", data.tenant_id);
       }
       toast.success("アカウントを作成しました");
-      // AuthProviderを確実にリフレッシュするためフルリロード
       window.location.href = "/";
     } catch (err: any) {
+      addLog(`エラー: ${err.message}`);
       toast.error(err.message || "アカウント作成に失敗しました");
     } finally {
       setIsLoading(false);
@@ -180,8 +191,17 @@ export default function RegisterPage() {
           </div>
 
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
-            ⚠️ 開発モード: このページは認証なしでアカウントを作成できます。本番環境では無効化してください。
+            開発モード: このページは認証なしでアカウントを作成できます。
           </div>
+
+          {debugLog.length > 0 && (
+            <div className="mt-4 p-3 bg-gray-900 rounded-lg text-xs text-green-400 font-mono max-h-48 overflow-y-auto">
+              <p className="text-gray-400 mb-1">Debug Log:</p>
+              {debugLog.map((log, i) => (
+                <p key={i} className="break-all">{log}</p>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
