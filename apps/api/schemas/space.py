@@ -26,3 +26,8 @@ class SpaceCreateRequest(BaseModel):
     description: str | None = None
     grid_rows: int = 8
     grid_cols: int = 10
+
+
+class SpaceUpdateRequest(BaseModel):
+    name: str | None = None
+    description: str | None = None
