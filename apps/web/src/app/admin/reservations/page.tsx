@@ -26,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { List, BarChart3 } from "lucide-react";
 
 // --- Types ---
 
@@ -210,7 +211,7 @@ export default function AdminReservationsPage() {
                 }`}
                 onClick={() => setViewMode("list")}
               >
-                📋 リスト
+                <List className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> リスト
               </button>
               <button
                 className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
@@ -220,7 +221,7 @@ export default function AdminReservationsPage() {
                 }`}
                 onClick={() => setViewMode("timeline")}
               >
-                📊 タイムライン
+                <BarChart3 className="w-4 h-4 inline-block mr-1.5 -mt-0.5" /> タイムライン
               </button>
             </div>
 

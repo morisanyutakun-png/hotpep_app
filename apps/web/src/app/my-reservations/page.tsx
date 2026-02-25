@@ -11,6 +11,7 @@ import { Header } from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, Armchair } from "lucide-react";
 import { toast } from "sonner";
 
 interface Reservation {
@@ -100,9 +101,9 @@ export default function MyReservationsPage() {
                           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                         </div>
                         <div className="text-sm text-muted-foreground flex flex-wrap gap-x-5 gap-y-1">
-                          <span className="flex items-center gap-1.5">📅 {format(new Date(r.date), "M月d日 (EEE)", { locale: ja })}</span>
-                          <span className="flex items-center gap-1.5">🕐 {r.time_slot_label}</span>
-                          <span className="flex items-center gap-1.5">💺 {r.seat_label}</span>
+                          <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 opacity-50" /> {format(new Date(r.date), "M月d日 (EEE)", { locale: ja })}</span>
+                          <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 opacity-50" /> {r.time_slot_label}</span>
+                          <span className="flex items-center gap-1.5"><Armchair className="w-3.5 h-3.5 opacity-50" /> {r.seat_label}</span>
                         </div>
                       </div>
                       {r.status === "booked" && (

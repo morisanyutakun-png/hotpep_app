@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Check } from "lucide-react";
 
 interface Tenant {
   id: string;
@@ -184,7 +185,7 @@ export default function RegisterPage() {
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {i < currentStepIndex ? "✓" : s.num}
+                    {i < currentStepIndex ? <Check className="w-3.5 h-3.5" /> : s.num}
                   </div>
                   <span className={`text-xs mt-1.5 font-medium ${i === currentStepIndex ? "text-primary" : "text-muted-foreground/60"}`}>
                     {s.label}

@@ -1,5 +1,8 @@
 "use client";
 
+import { ReactNode } from "react";
+import { VolumeX, Plug } from "lucide-react";
+
 interface SeatData {
   seat_id: string;
   label: string;
@@ -62,10 +65,10 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; 
   },
 };
 
-const SEAT_TYPE_ICONS: Record<string, string> = {
-  quiet: "🤫",
-  outlet: "🔌",
-  normal: "",
+const SEAT_TYPE_ICONS: Record<string, ReactNode> = {
+  quiet: <VolumeX className="w-2.5 h-2.5" />,
+  outlet: <Plug className="w-2.5 h-2.5" />,
+  normal: null,
 };
 
 export function SeatMap({
@@ -118,8 +121,8 @@ export function SeatMap({
           <span>使用不可</span>
         </div>
         <div className="flex items-center gap-1.5 ml-2 border-l border-border/40 pl-3">
-          <span>🤫 静か席</span>
-          <span>🔌 コンセント</span>
+          <span className="flex items-center gap-1"><VolumeX className="w-3 h-3 opacity-50" /> 静か席</span>
+          <span className="flex items-center gap-1"><Plug className="w-3 h-3 opacity-50" /> コンセント</span>
         </div>
       </div>
 
@@ -164,7 +167,7 @@ export function SeatMap({
               const isSelected = selectedSeatId === seatData.seat_id;
               const status = isSelected ? "selected" : seatData.status;
               const style = STATUS_STYLES[status] || STATUS_STYLES.disabled;
-              const icon = SEAT_TYPE_ICONS[seatData.seat_type] || "";
+              const icon = SEAT_TYPE_ICONS[seatData.seat_type] || null;
 
               return (
                 <button
@@ -181,7 +184,7 @@ export function SeatMap({
                   title={`${seatData.label} (${seatData.seat_type})`}
                 >
                   <span className="font-semibold text-[11px] sm:text-xs">{seatData.label}</span>
-                  {icon && <span className="text-[10px] leading-none">{icon}</span>}
+                  {icon && <span className="leading-none opacity-60">{icon}</span>}
                 </button>
               );
             })

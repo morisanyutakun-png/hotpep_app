@@ -12,6 +12,7 @@ import { SeatMap } from "@/components/seat-map";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Clock, ArrowUp, CalendarX, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface Space {
@@ -214,8 +215,8 @@ export default function SpaceReservationPage() {
     return "bg-muted text-muted-foreground";
   };
 
-  const stepIcon = (state: "completed" | "active" | "upcoming", num: number) => {
-    if (state === "completed") return "✓";
+  const stepIcon = (state: "completed" | "active" | "upcoming", num: number): React.ReactNode => {
+    if (state === "completed") return <Check className="w-3.5 h-3.5" />;
     return String(num);
   };
 
@@ -327,8 +328,8 @@ export default function SpaceReservationPage() {
                         >
                           <span className="block">{slot.label}</span>
                           {isSelected && (
-                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white shadow-sm">
-                              ✓
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-sm">
+                              <Check className="w-3 h-3" />
                             </span>
                           )}
                         </button>
@@ -337,7 +338,7 @@ export default function SpaceReservationPage() {
                   </div>
                 ) : (
                   <div className="text-center py-6 space-y-2">
-                    <div className="text-3xl">🕐</div>
+                    <Clock className="w-8 h-8 text-muted-foreground/30 mx-auto" />
                     <p className="text-sm text-muted-foreground">
                       このスペースにはまだ時間帯が設定されていません
                     </p>
@@ -372,7 +373,7 @@ export default function SpaceReservationPage() {
               <CardContent>
                 {!selectedTimeSlotId ? (
                   <div className="text-center py-8 space-y-2">
-                    <div className="text-3xl opacity-50">👆</div>
+                    <ArrowUp className="w-8 h-8 text-muted-foreground/25 mx-auto" />
                     <p className="text-sm text-muted-foreground">
                       上の時間帯を選択すると座席マップが表示されます
                     </p>
@@ -400,7 +401,7 @@ export default function SpaceReservationPage() {
                   </div>
                 ) : availableCount === 0 && !selectedSeatId ? (
                   <div className="text-center py-8 space-y-2">
-                    <div className="text-3xl">😢</div>
+                    <CalendarX className="w-8 h-8 text-muted-foreground/30 mx-auto" />
                     <p className="text-sm text-muted-foreground">
                       この時間帯は満席です
                     </p>
@@ -433,7 +434,7 @@ export default function SpaceReservationPage() {
             <Card className={`shadow-premium-lg transition-all duration-300 border-border/40 ${canReserve ? "ring-2 ring-primary/20" : ""}`}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  📋 予約内容
+                  <FileText className="w-4 h-4 opacity-60" /> 予約内容
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">

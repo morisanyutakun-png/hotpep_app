@@ -8,6 +8,7 @@ import { useApiFetch } from "@/hooks/use-api";
 import { Header } from "@/components/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Users, ClipboardList, Building2, Settings } from "lucide-react";
 import Link from "next/link";
 
 interface DashboardStats {
@@ -106,8 +107,8 @@ export default function AdminDashboard() {
           <Link href="/admin/students">
             <Card className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group h-full border-border/40">
               <CardHeader>
-                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
-                  👩‍🎓 生徒管理
+                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200 flex items-center gap-2.5">
+                  <Users className="w-5 h-5 opacity-60" /> 生徒管理
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -121,8 +122,8 @@ export default function AdminDashboard() {
           <Link href="/admin/reservations">
             <Card className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group h-full border-border/40">
               <CardHeader>
-                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
-                  📋 予約管理
+                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200 flex items-center gap-2.5">
+                  <ClipboardList className="w-5 h-5 opacity-60" /> 予約管理
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -136,8 +137,8 @@ export default function AdminDashboard() {
           <Link href="/admin/spaces">
             <Card className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group h-full border-border/40">
               <CardHeader>
-                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
-                  🏢 スペース管理
+                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200 flex items-center gap-2.5">
+                  <Building2 className="w-5 h-5 opacity-60" /> スペース管理
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -151,8 +152,8 @@ export default function AdminDashboard() {
           <Link href="/admin/settings">
             <Card className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group h-full border-border/40">
               <CardHeader>
-                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
-                  ⚙️ 設定
+                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200 flex items-center gap-2.5">
+                  <Settings className="w-5 h-5 opacity-60" /> 設定
                 </CardTitle>
               </CardHeader>
               <CardContent>

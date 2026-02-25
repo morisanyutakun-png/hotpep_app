@@ -21,6 +21,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Building2, Clock, Sunrise, BookOpen, AlertTriangle, LayoutGrid, Settings, Trash2, Inbox, Timer, Zap, PenLine, ClipboardList, X } from "lucide-react";
 import Link from "next/link";
 
 interface SpaceSummary {
@@ -48,7 +49,7 @@ interface TimeSlot {
 const TIME_PRESETS = [
   {
     name: "2時間区切り（9時〜21時）",
-    icon: "🏢",
+    icon: <Building2 className="w-5 h-5" />,
     slots: [
       { start: "09:00", end: "11:00" },
       { start: "11:00", end: "13:00" },
@@ -60,7 +61,7 @@ const TIME_PRESETS = [
   },
   {
     name: "1時間区切り（9時〜18時）",
-    icon: "⏰",
+    icon: <Clock className="w-5 h-5" />,
     slots: [
       { start: "09:00", end: "10:00" },
       { start: "10:00", end: "11:00" },
@@ -75,7 +76,7 @@ const TIME_PRESETS = [
   },
   {
     name: "午前・午後・夜（3区分）",
-    icon: "🌅",
+    icon: <Sunrise className="w-5 h-5" />,
     slots: [
       { start: "09:00", end: "12:00" },
       { start: "13:00", end: "17:00" },
@@ -84,7 +85,7 @@ const TIME_PRESETS = [
   },
   {
     name: "塾向け（16時〜22時）",
-    icon: "📚",
+    icon: <BookOpen className="w-5 h-5" />,
     slots: [
       { start: "16:00", end: "18:00" },
       { start: "18:00", end: "20:00" },
@@ -397,7 +398,7 @@ export default function AdminSpacesPage() {
                       onClick={() => openTimeSlots(space)}
                       className="w-full flex items-center gap-2.5 bg-accent/60 border border-border/40 rounded-xl px-4 py-3 text-left hover:bg-accent transition-all duration-200"
                     >
-                      <span className="text-lg">⚠️</span>
+                      <AlertTriangle className="w-5 h-5 text-amber-500" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-foreground/70">
                           時間帯が未設定です
@@ -425,7 +426,7 @@ export default function AdminSpacesPage() {
                         size="sm"
                         className="btn-glow text-xs"
                       >
-                        🪑 レイアウト
+                        <LayoutGrid className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> レイアウト
                       </Button>
                     </Link>
                     <Button
@@ -438,7 +439,7 @@ export default function AdminSpacesPage() {
                       }`}
                       onClick={() => openTimeSlots(space)}
                     >
-                      🕐 時間帯 {space.time_slot_count > 0 && `(${space.time_slot_count})`}
+                      <Clock className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> 時間帯 {space.time_slot_count > 0 && `(${space.time_slot_count})`}
                     </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-2.5">
@@ -448,7 +449,7 @@ export default function AdminSpacesPage() {
                       className="text-xs"
                       onClick={() => openSettings(space)}
                     >
-                      ⚙️ 基本設定
+                      <Settings className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> 基本設定
                     </Button>
                     <Button
                       size="sm"
@@ -456,7 +457,7 @@ export default function AdminSpacesPage() {
                       className="text-xs text-destructive hover:bg-destructive/5 hover:text-destructive border-destructive/20"
                       onClick={() => openDelete(space)}
                     >
-                      🗑 削除
+                      <Trash2 className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> 削除
                     </Button>
                   </div>
                 </CardContent>
@@ -467,7 +468,7 @@ export default function AdminSpacesPage() {
           /* Empty state */
           <Card className="py-20 border-border/40">
             <CardContent className="text-center">
-              <div className="text-6xl mb-5">🏢</div>
+              <Building2 className="w-14 h-14 text-muted-foreground/25 mx-auto mb-5" />
               <h2 className="text-xl font-semibold tracking-tight text-foreground mb-2">
                 スペースがまだありません
               </h2>
@@ -558,7 +559,7 @@ export default function AdminSpacesPage() {
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              🕐 時間帯の設定
+              <Clock className="w-5 h-5 opacity-60" /> 時間帯の設定
               {selectedSpace && (
                 <Badge variant="secondary" className="font-normal ml-1">
                   {selectedSpace.name}
@@ -575,7 +576,7 @@ export default function AdminSpacesPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium text-sm text-gray-700 flex items-center gap-1.5">
-                  📋 現在の時間帯
+                  <ClipboardList className="w-4 h-4 opacity-50" /> 現在の時間帯
                   {timeSlots && (
                     <Badge variant="outline" className="text-[11px] font-normal">
                       {timeSlots.length}枠
@@ -622,14 +623,14 @@ export default function AdminSpacesPage() {
                         onClick={() => deleteSlotMutation.mutate(slot.id)}
                         disabled={deleteSlotMutation.isPending}
                       >
-                        ✕
+                        <X className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   ))}
                 </div>
               ) : (
                   <div className="text-center py-6 bg-secondary/40 rounded-xl border-2 border-dashed border-border/60">
-                  <div className="text-3xl mb-2">📭</div>
+                  <Inbox className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">
                     時間帯がまだ設定されていません
                   </p>
@@ -643,7 +644,7 @@ export default function AdminSpacesPage() {
             {/* タイムラインのビジュアルプレビュー */}
             {timeSlots && timeSlots.length > 0 && (
               <div className="space-y-2">
-                <h3 className="font-medium text-sm text-foreground/80">⏱ タイムライン</h3>
+                <h3 className="font-medium text-sm text-foreground/80"><Timer className="w-4 h-4 inline-block mr-1.5 -mt-0.5 opacity-50" />タイムライン</h3>
                 <div className="bg-secondary/30 rounded-xl p-3">
                   <div className="flex gap-1 items-stretch h-10">
                     {timeSlots.map((slot, idx) => {
@@ -676,7 +677,7 @@ export default function AdminSpacesPage() {
             {/* プリセットから一括設定 */}
             <div className="space-y-3 border-t pt-4">
               <h3 className="font-medium text-sm text-foreground/80 flex items-center gap-1.5">
-                ⚡ プリセットから一括設定
+                <Zap className="w-4 h-4 opacity-50" /> プリセットから一括設定
               </h3>
               <p className="text-xs text-muted-foreground -mt-1">
                 よくあるパターンからワンクリックで設定できます
@@ -694,7 +695,7 @@ export default function AdminSpacesPage() {
                     disabled={isApplyingPreset}
                     className="flex items-start gap-3 bg-card border border-border/40 rounded-xl px-3 py-3 text-left hover:border-primary/40 hover:bg-primary/5 transition-all disabled:opacity-50"
                   >
-                    <span className="text-xl mt-0.5">{preset.icon}</span>
+                    <span className="text-xl mt-0.5 text-foreground/40">{preset.icon}</span>
                     <div>
                       <p className="text-sm font-medium text-foreground">{preset.name}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -715,7 +716,7 @@ export default function AdminSpacesPage() {
             {/* 手動追加 */}
             <div className="space-y-3 border-t pt-4">
               <h3 className="font-medium text-sm text-foreground/80 flex items-center gap-1.5">
-                ✏️ 手動で追加
+                <PenLine className="w-4 h-4 opacity-50" /> 手動で追加
               </h3>
               <div className="bg-secondary/30 rounded-xl p-4 space-y-3">
                 <div className="grid grid-cols-5 gap-2 items-end">
@@ -766,7 +767,7 @@ export default function AdminSpacesPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              ⚙️ 基本設定
+              <Settings className="w-5 h-5 opacity-60" /> 基本設定
               {selectedSpace && (
                 <Badge variant="secondary" className="font-normal ml-1">
                   {selectedSpace.name}

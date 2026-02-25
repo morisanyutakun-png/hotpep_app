@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Save, Armchair, Square, Ban, VolumeX, Plug } from "lucide-react";
 import { toast } from "sonner";
 
 type CellType = "seat" | "aisle" | "blocked";
@@ -51,10 +52,10 @@ const CELL_TYPE_STYLES: Record<CellType, string> = {
   blocked: "bg-muted border-border/60 text-muted-foreground",
 };
 
-const SEAT_TYPE_DISPLAY: Record<SeatType, { label: string; icon: string }> = {
-  normal: { label: "通常", icon: "" },
-  quiet: { label: "静か席", icon: "🤫" },
-  outlet: { label: "コンセント", icon: "🔌" },
+const SEAT_TYPE_DISPLAY: Record<SeatType, { label: string; icon: React.ReactNode }> = {
+  normal: { label: "通常", icon: null },
+  quiet: { label: "静か席", icon: <VolumeX className="w-3.5 h-3.5" /> },
+  outlet: { label: "コンセント", icon: <Plug className="w-3.5 h-3.5" /> },
 };
 
 export default function LayoutEditorPage() {
@@ -203,7 +204,7 @@ export default function LayoutEditorPage() {
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending}
             >
-              {saveMutation.isPending ? "保存中..." : "💾 保存"}
+              {saveMutation.isPending ? "保存中..." : <><Save className="w-4 h-4 mr-1.5 inline-block -mt-0.5" />保存</>}
             </Button>
           </div>
         </div>
@@ -227,7 +228,7 @@ export default function LayoutEditorPage() {
                         : "hover:bg-secondary/60"
                     }`}
                   >
-                    {type === "seat" ? "💺 座席" : type === "aisle" ? "⬜ 通路" : "🚫 ブロック"}
+                    {type === "seat" ? <><Armchair className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> 座席</> : type === "aisle" ? <><Square className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> 通路</> : <><Ban className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> ブロック</>}
                   </button>
                 ))}
               </div>
