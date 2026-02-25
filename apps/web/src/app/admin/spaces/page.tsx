@@ -21,7 +21,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Building2, Clock, Sunrise, BookOpen, AlertTriangle, LayoutGrid, Settings, Trash2, Inbox, Timer, Zap, PenLine, ClipboardList, X, Check, ChevronRight, ChevronLeft, Plus, Minus, Sparkles, ArrowRight } from "lucide-react";
+import { Building2, Clock, Sunrise, BookOpen, AlertTriangle, LayoutGrid, Settings, Trash2, Inbox, Timer, Zap, PenLine, ClipboardList, X, Check, ChevronRight, ChevronLeft, Plus, Minus, Sparkles, ArrowRight, Armchair, Square, Ban, VolumeX, Plug, MousePointer2 } from "lucide-react";
 import Link from "next/link";
 
 interface SpaceSummary {
@@ -44,6 +44,38 @@ interface TimeSlot {
   display_order: number;
   is_active: boolean;
 }
+
+// ===== Layout Editor Types =====
+type CellType = "seat" | "aisle" | "blocked";
+type SeatType = "normal" | "quiet" | "outlet";
+
+interface WizardCell {
+  type: CellType;
+  label: string | null;
+  seat_type: SeatType | null;
+  is_enabled: boolean;
+}
+
+function createEmptyGrid(rows: number, cols: number): WizardCell[][] {
+  return Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => ({
+      type: "aisle" as CellType,
+      label: null,
+      seat_type: null,
+      is_enabled: true,
+    }))
+  );
+}
+
+function autoLabel(row: number, col: number): string {
+  return `${String.fromCharCode(65 + row)}${col + 1}`;
+}
+
+const CELL_STYLES: Record<CellType, string> = {
+  seat: "bg-emerald-50 border-emerald-300/80 text-emerald-800 shadow-sm",
+  aisle: "bg-card/60 border-dashed border-border/80",
+  blocked: "bg-muted/80 border-border text-muted-foreground",
+};
 
 // プリセットテンプレート
 const TIME_PRESETS = [
@@ -108,13 +140,19 @@ export default function AdminSpacesPage() {
   const [selectedSpace, setSelectedSpace] = useState<SpaceSummary | null>(null);
 
   // ===== Create Wizard State =====
-  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
-  const [newRows, setNewRows] = useState(8);
-  const [newCols, setNewCols] = useState(10);
+  const [newRows, setNewRows] = useState(5);
+  const [newCols, setNewCols] = useState(6);
 
-  // Wizard Step 2: Time slots (local state before API)
+  // Wizard Step 2: Layout editor
+  const [wizardGrid, setWizardGrid] = useState<WizardCell[][]>(() => createEmptyGrid(5, 6));
+  const [wizardTool, setWizardTool] = useState<CellType>("seat");
+  const [wizardSeatType, setWizardSeatType] = useState<SeatType>("normal");
+  const [wizardDrawing, setWizardDrawing] = useState(false);
+
+  // Wizard Step 3: Time slots (local state before API)
   const [wizardSlots, setWizardSlots] = useState<{ start: string; end: string; label: string }[]>([]);
   const [wizardSlotMode, setWizardSlotMode] = useState<"preset" | "custom" | "manual">("preset");
   const [customStart, setCustomStart] = useState("09:00");
@@ -134,6 +172,49 @@ export default function AdminSpacesPage() {
   const [slotStart, setSlotStart] = useState("");
   const [slotEnd, setSlotEnd] = useState("");
   const [isApplyingPreset, setIsApplyingPreset] = useState(false);
+
+  // ===== Layout editor helpers =====
+  const wizardSeatCount = useMemo(() => wizardGrid.flat().filter((c) => c.type === "seat").length, [wizardGrid]);
+
+  const handleWizardCellClick = useCallback((row: number, col: number) => {
+    setWizardGrid((prev) => {
+      const newGrid = prev.map((r) => r.map((c) => ({ ...c })));
+      if (wizardTool === "seat") {
+        newGrid[row][col] = {
+          type: "seat",
+          label: autoLabel(row, col),
+          seat_type: wizardSeatType,
+          is_enabled: true,
+        };
+      } else {
+        newGrid[row][col] = {
+          type: wizardTool,
+          label: null,
+          seat_type: null,
+          is_enabled: true,
+        };
+      }
+      return newGrid;
+    });
+  }, [wizardTool, wizardSeatType]);
+
+  const handleWizardCellEnter = useCallback((row: number, col: number) => {
+    if (!wizardDrawing) return;
+    handleWizardCellClick(row, col);
+  }, [wizardDrawing, handleWizardCellClick]);
+
+  // Sync grid when rows/cols change in step 1
+  const syncWizardGrid = useCallback((rows: number, cols: number) => {
+    setWizardGrid((prev) => {
+      const newGrid = createEmptyGrid(rows, cols);
+      for (let r = 0; r < Math.min(prev.length, rows); r++) {
+        for (let c = 0; c < Math.min(prev[r]?.length || 0, cols); c++) {
+          newGrid[r][c] = prev[r][c];
+        }
+      }
+      return newGrid;
+    });
+  }, []);
 
   // ===== Custom interval generator =====
   const generateCustomSlots = useCallback(() => {
@@ -188,8 +269,12 @@ export default function AdminSpacesPage() {
     setWizardStep(1);
     setNewName("");
     setNewDesc("");
-    setNewRows(8);
-    setNewCols(10);
+    setNewRows(5);
+    setNewCols(6);
+    setWizardGrid(createEmptyGrid(5, 6));
+    setWizardTool("seat");
+    setWizardSeatType("normal");
+    setWizardDrawing(false);
     setWizardSlots([]);
     setWizardSlotMode("preset");
     setCustomStart("09:00");
@@ -201,7 +286,7 @@ export default function AdminSpacesPage() {
     setIsCreating(false);
   }, []);
 
-  // ===== Create space + time slots =====
+  // ===== Create space + layout + time slots =====
   const handleCreateSpace = useCallback(async () => {
     if (!tenantId) return;
     setIsCreating(true);
@@ -217,7 +302,20 @@ export default function AdminSpacesPage() {
         }),
       });
 
-      // 2. Add time slots
+      // 2. Save layout (if any seats were placed)
+      const hasCells = wizardGrid.flat().some((c) => c.type !== "aisle");
+      if (hasCells) {
+        await apiFetch(`/spaces/${spaceData.id}/layout`, {
+          method: "PUT",
+          body: JSON.stringify({
+            grid_rows: newRows,
+            grid_cols: newCols,
+            cells: wizardGrid,
+          }),
+        });
+      }
+
+      // 3. Add time slots
       for (let i = 0; i < wizardSlots.length; i++) {
         const s = wizardSlots[i];
         await apiFetch(`/spaces/${spaceData.id}/time-slots`, {
@@ -231,9 +329,9 @@ export default function AdminSpacesPage() {
         });
       }
 
-      // 3. Success
+      // 4. Success
       toast.success("スペースを作成しました", {
-        description: `「${newName}」に ${wizardSlots.length} 件の時間帯を設定しました`,
+        description: `「${newName}」（${wizardSeatCount}席 / ${wizardSlots.length}時間帯）`,
       });
       queryClient.invalidateQueries({ queryKey: ["adminSpacesSummary"] });
       setCreateOpen(false);
@@ -243,7 +341,7 @@ export default function AdminSpacesPage() {
     } finally {
       setIsCreating(false);
     }
-  }, [tenantId, newName, newDesc, newRows, newCols, wizardSlots, apiFetch, queryClient, resetWizard]);
+  }, [tenantId, newName, newDesc, newRows, newCols, wizardGrid, wizardSlots, wizardSeatCount, apiFetch, queryClient, resetWizard]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -594,39 +692,41 @@ export default function AdminSpacesPage() {
 
       {/* ===== Create Wizard (Multi-step) ===== */}
       <Dialog open={createOpen} onOpenChange={(v) => { if (!v) resetWizard(); setCreateOpen(v); }}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] p-0 !flex !flex-col overflow-hidden">
+        <DialogContent className={`max-h-[92vh] p-0 !flex !flex-col overflow-hidden ${wizardStep === 2 ? "sm:max-w-4xl" : "sm:max-w-2xl"}`}>
           {/* Wizard Header - fixed */}
           <div className="px-6 pt-6 pb-4 border-b border-border/50 shrink-0 bg-gradient-to-b from-background to-background/95">
             <DialogTitle className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">新規スペース作成</DialogTitle>
             <DialogDescription className="text-sm mt-1 text-muted-foreground/80">
               {wizardStep === 1 && "基本情報を入力してください"}
-              {wizardStep === 2 && "予約可能な時間帯を設定してください"}
-              {wizardStep === 3 && "設定内容を確認して作成してください"}
+              {wizardStep === 2 && "座席レイアウトを設定してください"}
+              {wizardStep === 3 && "予約可能な時間帯を設定してください"}
+              {wizardStep === 4 && "設定内容を確認して作成してください"}
             </DialogDescription>
             {/* Step indicator */}
-            <div className="flex items-center gap-1.5 mt-5">
+            <div className="flex items-center gap-1 mt-5">
               {[
                 { num: 1, label: "基本情報" },
-                { num: 2, label: "時間帯" },
-                { num: 3, label: "確認" },
+                { num: 2, label: "レイアウト" },
+                { num: 3, label: "時間帯" },
+                { num: 4, label: "確認" },
               ].map((s, i) => (
-                <div key={s.num} className="flex items-center gap-1.5 flex-1">
+                <div key={s.num} className="flex items-center gap-1 flex-1">
                   {i > 0 && (
                     <div className={`flex-1 h-[2px] rounded-full transition-all duration-500 ${
                       wizardStep > i ? "bg-gradient-to-r from-primary to-primary/80" : "bg-border"
                     }`} />
                   )}
-                  <div className="flex items-center gap-1.5">
-                    <div className={`w-8 h-8 rounded-full text-xs flex items-center justify-center font-bold transition-all duration-500 ${
+                  <div className="flex items-center gap-1">
+                    <div className={`w-7 h-7 rounded-full text-[11px] flex items-center justify-center font-bold transition-all duration-500 ${
                       wizardStep > s.num
                         ? "bg-gradient-to-br from-primary to-primary/80 text-white shadow-md shadow-primary/30"
                         : wizardStep === s.num
                         ? "bg-gradient-to-br from-primary to-primary/80 text-white shadow-md shadow-primary/30 ring-4 ring-primary/15"
                         : "bg-muted text-muted-foreground/60 border border-border"
                     }`}>
-                      {wizardStep > s.num ? <Check className="w-4 h-4" /> : s.num}
+                      {wizardStep > s.num ? <Check className="w-3.5 h-3.5" /> : s.num}
                     </div>
-                    <span className={`text-xs font-semibold hidden sm:block transition-colors duration-300 ${
+                    <span className={`text-[11px] font-semibold hidden sm:block transition-colors duration-300 ${
                       wizardStep === s.num ? "text-primary" : wizardStep > s.num ? "text-foreground/60" : "text-muted-foreground/50"
                     }`}>
                       {s.label}
@@ -667,27 +767,151 @@ export default function AdminSpacesPage() {
                     <div className="bg-secondary/30 rounded-xl p-3">
                       <Label className="text-xs text-muted-foreground">行数</Label>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => setNewRows(Math.max(1, newRows - 1))}><Minus className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => { const v = Math.max(1, newRows - 1); setNewRows(v); syncWizardGrid(v, newCols); }}><Minus className="w-3.5 h-3.5" /></Button>
                         <span className="text-lg font-bold w-8 text-center">{newRows}</span>
-                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => setNewRows(Math.min(20, newRows + 1))}><Plus className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => { const v = Math.min(20, newRows + 1); setNewRows(v); syncWizardGrid(v, newCols); }}><Plus className="w-3.5 h-3.5" /></Button>
                       </div>
                     </div>
                     <div className="bg-secondary/30 rounded-xl p-3">
                       <Label className="text-xs text-muted-foreground">列数</Label>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => setNewCols(Math.max(1, newCols - 1))}><Minus className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => { const v = Math.max(1, newCols - 1); setNewCols(v); syncWizardGrid(newRows, v); }}><Minus className="w-3.5 h-3.5" /></Button>
                         <span className="text-lg font-bold w-8 text-center">{newCols}</span>
-                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => setNewCols(Math.min(20, newCols + 1))}><Plus className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => { const v = Math.min(20, newCols + 1); setNewCols(v); syncWizardGrid(newRows, v); }}><Plus className="w-3.5 h-3.5" /></Button>
                       </div>
                     </div>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-2">レイアウトは作成後に詳細編集できます</p>
+                  <p className="text-[11px] text-muted-foreground mt-2">次のステップで座席レイアウトを配置できます</p>
                 </div>
               </div>
             )}
 
-            {/* ===== Step 2: Time Slots ===== */}
+            {/* ===== Step 2: Layout Editor ===== */}
             {wizardStep === 2 && (
+              <div className="space-y-4 animate-fade-in-up">
+                {/* Tool bar */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex bg-secondary/40 rounded-xl p-1 gap-0.5">
+                    {([
+                      { key: "seat" as CellType, label: "座席", icon: <Armchair className="w-3.5 h-3.5" /> },
+                      { key: "aisle" as CellType, label: "通路", icon: <Square className="w-3.5 h-3.5" /> },
+                      { key: "blocked" as CellType, label: "ブロック", icon: <Ban className="w-3.5 h-3.5" /> },
+                    ]).map((tool) => (
+                      <button
+                        key={tool.key}
+                        onClick={() => setWizardTool(tool.key)}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                          wizardTool === tool.key
+                            ? "bg-card text-primary shadow-sm border border-primary/20"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {tool.icon} {tool.label}
+                      </button>
+                    ))}
+                  </div>
+                  {wizardTool === "seat" && (
+                    <div className="flex bg-secondary/40 rounded-xl p-1 gap-0.5">
+                      {([
+                        { key: "normal" as SeatType, label: "通常" },
+                        { key: "quiet" as SeatType, label: "静か", icon: <VolumeX className="w-3 h-3" /> },
+                        { key: "outlet" as SeatType, label: "コンセント", icon: <Plug className="w-3 h-3" /> },
+                      ]).map((st) => (
+                        <button
+                          key={st.key}
+                          onClick={() => setWizardSeatType(st.key)}
+                          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                            wizardSeatType === st.key
+                              ? "bg-card text-primary shadow-sm border border-primary/20"
+                              : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          {st.icon} {st.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs font-semibold bg-primary/8 text-primary border border-primary/15">
+                      <Armchair className="w-3 h-3 mr-1" />{wizardSeatCount} 席
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs h-7 border-border/60"
+                      onClick={() => setWizardGrid(createEmptyGrid(newRows, newCols))}
+                    >
+                      リセット
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Grid hint */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+                  <MousePointer2 className="w-3.5 h-3.5" />
+                  <span>クリックまたはドラッグで座席を配置 · 右の凡例で配色を確認</span>
+                </div>
+
+                {/* Grid editor */}
+                <div className="overflow-x-auto pb-1">
+                  <div
+                    className="inline-grid gap-1 p-2 bg-secondary/15 rounded-xl border border-border/50"
+                    style={{ gridTemplateColumns: `repeat(${newCols}, minmax(0, 1fr))` }}
+                    onMouseLeave={() => setWizardDrawing(false)}
+                  >
+                    {wizardGrid.map((row, rowIdx) =>
+                      row.map((cell, colIdx) => (
+                        <button
+                          key={`${rowIdx}-${colIdx}`}
+                          onMouseDown={(e) => { e.preventDefault(); setWizardDrawing(true); handleWizardCellClick(rowIdx, colIdx); }}
+                          onMouseUp={() => setWizardDrawing(false)}
+                          onMouseEnter={() => handleWizardCellEnter(rowIdx, colIdx)}
+                          className={`
+                            w-10 h-10 sm:w-11 sm:h-11 rounded-lg border-[1.5px] text-[10px] sm:text-xs
+                            flex flex-col items-center justify-center transition-all duration-150 select-none
+                            hover:scale-105 active:scale-95
+                            ${CELL_STYLES[cell.type]}
+                          `}
+                        >
+                          {cell.type === "seat" && (
+                            <>
+                              <span className="font-semibold leading-tight">{cell.label}</span>
+                              {cell.seat_type && cell.seat_type !== "normal" && (
+                                <span className="text-[8px] leading-none opacity-60">
+                                  {cell.seat_type === "quiet" ? <VolumeX className="w-2.5 h-2.5" /> : <Plug className="w-2.5 h-2.5" />}
+                                </span>
+                              )}
+                            </>
+                          )}
+                          {cell.type === "blocked" && (
+                            <span className="text-muted-foreground/50 text-xs">✕</span>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap gap-3 text-xs text-foreground/60">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3.5 h-3.5 rounded bg-emerald-50 border-[1.5px] border-emerald-300/80" />
+                    <span>座席</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3.5 h-3.5 rounded bg-card/60 border-[1.5px] border-dashed border-border/80" />
+                    <span>通路</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3.5 h-3.5 rounded bg-muted/80 border-[1.5px] border-border" />
+                    <span>ブロック</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ===== Step 3: Time Slots ===== */}
+            {wizardStep === 3 && (
               <div className="space-y-5 animate-fade-in-up">
                 {/* Mode tabs */}
                 <div className="flex bg-secondary/40 rounded-xl p-1 gap-1">
@@ -868,8 +1092,8 @@ export default function AdminSpacesPage() {
               </div>
             )}
 
-            {/* ===== Step 3: Confirmation ===== */}
-            {wizardStep === 3 && (
+            {/* ===== Step 4: Confirmation ===== */}
+            {wizardStep === 4 && (
               <div className="space-y-5 animate-fade-in-up">
                 <div className="bg-secondary/20 rounded-2xl p-5 space-y-4">
                   <div className="flex items-center gap-3">
@@ -882,10 +1106,14 @@ export default function AdminSpacesPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-4 gap-3">
                     <div className="bg-card rounded-xl p-3 text-center border border-border/40">
                       <p className="text-xl font-bold text-foreground">{newRows}×{newCols}</p>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">グリッドサイズ</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">グリッド</p>
+                    </div>
+                    <div className="bg-card rounded-xl p-3 text-center border border-border/40">
+                      <p className="text-xl font-bold text-emerald-600">{wizardSeatCount}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">座席数</p>
                     </div>
                     <div className="bg-card rounded-xl p-3 text-center border border-border/40">
                       <p className="text-xl font-bold text-primary">{wizardSlots.length}</p>
@@ -900,6 +1128,33 @@ export default function AdminSpacesPage() {
                       </p>
                     </div>
                   </div>
+
+                  {/* Mini layout preview */}
+                  {wizardSeatCount > 0 && (
+                    <div className="bg-card rounded-xl p-3 border border-border/40">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">レイアウトプレビュー</p>
+                      <div className="flex justify-center">
+                        <div
+                          className="inline-grid gap-[2px]"
+                          style={{ gridTemplateColumns: `repeat(${newCols}, 1fr)` }}
+                        >
+                          {wizardGrid.flat().map((cell, idx) => (
+                            <div
+                              key={idx}
+                              className={`rounded-[2px] ${
+                                cell.type === "seat"
+                                  ? "bg-primary/80"
+                                  : cell.type === "blocked"
+                                  ? "bg-muted-foreground/30"
+                                  : "bg-muted/30"
+                              }`}
+                              style={{ width: "8px", height: "8px" }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {wizardSlots.length > 0 && (
                     <div className="bg-card rounded-xl p-3 border border-border/40">
@@ -939,7 +1194,7 @@ export default function AdminSpacesPage() {
           <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between bg-gradient-to-t from-secondary/20 to-secondary/5 shrink-0">
             <div>
               {wizardStep > 1 ? (
-                <Button variant="ghost" className="text-foreground/60 hover:text-foreground" onClick={() => setWizardStep((s) => Math.max(1, s - 1) as 1 | 2 | 3)}>
+                <Button variant="ghost" className="text-foreground/60 hover:text-foreground" onClick={() => setWizardStep((s) => Math.max(1, s - 1) as 1 | 2 | 3 | 4)}>
                   <ChevronLeft className="w-4 h-4 mr-1" /> 戻る
                 </Button>
               ) : (
@@ -949,16 +1204,19 @@ export default function AdminSpacesPage() {
               )}
             </div>
             <div className="flex items-center gap-3">
-              {wizardStep === 2 && wizardSlots.length === 0 && (
+              {wizardStep === 2 && wizardSeatCount === 0 && (
                 <span className="text-xs text-muted-foreground/60 hidden sm:block">あとから設定も可能です</span>
               )}
-              {wizardStep < 3 ? (
+              {wizardStep === 3 && wizardSlots.length === 0 && (
+                <span className="text-xs text-muted-foreground/60 hidden sm:block">あとから設定も可能です</span>
+              )}
+              {wizardStep < 4 ? (
                 <Button
                   className="btn-glow min-w-[140px]"
                   disabled={wizardStep === 1 && !newName.trim()}
-                  onClick={() => setWizardStep((s) => Math.min(3, s + 1) as 1 | 2 | 3)}
+                  onClick={() => setWizardStep((s) => Math.min(4, s + 1) as 1 | 2 | 3 | 4)}
                 >
-                  {wizardStep === 1 ? "時間帯の設定へ" : "確認へ"}
+                  {wizardStep === 1 ? "レイアウト設定へ" : wizardStep === 2 ? "時間帯の設定へ" : "確認へ"}
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (

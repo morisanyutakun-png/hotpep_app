@@ -129,7 +129,7 @@ async def update_space(
     space = result.scalar_one_or_none()
     if not space:
         raise HTTPException(status_code=404, detail="スペースが見つかりません")
-    user, tenant_id, role = admin
+    user, tenant_id = admin
     if space.tenant_id != tenant_id:
         raise HTTPException(status_code=403, detail="アクセス権がありません")
 
@@ -153,7 +153,7 @@ async def delete_space(
     space = result.scalar_one_or_none()
     if not space:
         raise HTTPException(status_code=404, detail="スペースが見つかりません")
-    user, tenant_id, role = admin
+    user, tenant_id = admin
     if space.tenant_id != tenant_id:
         raise HTTPException(status_code=403, detail="アクセス権がありません")
 
