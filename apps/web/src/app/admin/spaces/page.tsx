@@ -432,16 +432,21 @@ export default function AdminSpacesPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-10 animate-fade-in-up">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">スペース管理</h1>
-            <p className="text-muted-foreground mt-2 text-base">
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md shadow-primary/20">
+                <Building2 className="w-4.5 h-4.5 text-white" />
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">スペース管理</h1>
+            </div>
+            <p className="text-muted-foreground mt-1 text-base pl-[46px]">
               スペースの作成・設定・座席レイアウト編集
             </p>
           </div>
           <Button
-            className="btn-glow"
+            className="btn-glow text-base px-6 py-5 rounded-xl font-semibold"
             onClick={() => setCreateOpen(true)}
           >
-            + 新規スペース作成
+            <Plus className="w-5 h-5 mr-1.5" /> 新規スペース作成
           </Button>
         </div>
 
@@ -449,10 +454,10 @@ export default function AdminSpacesPage() {
         {isLoading ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse border-border/40">
+              <Card key={i} className="animate-pulse border-border/50 shadow-premium">
                 <CardContent className="p-6">
                   <div className="h-4 bg-muted rounded-lg w-2/3 mb-4" />
-                  <div className="aspect-[4/3] bg-muted/60 rounded-xl mb-4" />
+                  <div className="aspect-[4/3] bg-muted/50 rounded-xl mb-4" />
                   <div className="h-3 bg-muted/40 rounded-lg w-1/2" />
                 </CardContent>
               </Card>
@@ -463,21 +468,21 @@ export default function AdminSpacesPage() {
             {spaces.map((space) => (
               <Card
                 key={space.id}
-                className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 group border-border/40"
+                className="hover:shadow-premium-hover hover:-translate-y-1 transition-all duration-300 group border-border/60 shadow-premium bg-card/90 backdrop-blur-sm"
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg">{space.name}</CardTitle>
+                    <CardTitle className="text-lg font-bold tracking-tight">{space.name}</CardTitle>
                     <div className="flex gap-1.5">
-                      <Badge variant="secondary" className="text-xs font-medium">
+                      <Badge variant="secondary" className="text-xs font-semibold bg-primary/8 text-primary border border-primary/15">
                         {space.seat_count} 席
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={`text-xs font-medium ${
+                        className={`text-xs font-semibold ${
                           space.time_slot_count === 0
-                            ? "border-destructive/30 text-destructive bg-destructive/5"
-                            : ""
+                            ? "border-destructive/40 text-destructive bg-destructive/8"
+                            : "border-border/60 text-foreground/60"
                         }`}
                       >
                         {space.time_slot_count} 枠
@@ -493,14 +498,16 @@ export default function AdminSpacesPage() {
                   {space.time_slot_count === 0 && (
                     <button
                       onClick={() => openTimeSlots(space)}
-                      className="w-full flex items-center gap-2.5 bg-accent/60 border border-border/40 rounded-xl px-4 py-3 text-left hover:bg-accent transition-all duration-200"
+                      className="w-full flex items-center gap-2.5 bg-amber-50/80 border border-amber-200/60 rounded-xl px-4 py-3 text-left hover:bg-amber-50 hover:border-amber-300/60 transition-all duration-200 shadow-sm"
                     >
-                      <AlertTriangle className="w-5 h-5 text-amber-500" />
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground/70">
+                        <p className="text-xs font-semibold text-amber-900">
                           時間帯が未設定です
                         </p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-[11px] text-amber-600">
                           タップして時間帯を設定 →
                         </p>
                       </div>
@@ -521,7 +528,7 @@ export default function AdminSpacesPage() {
                     <Link href={`/admin/spaces/${space.id}/layout`} className="contents">
                       <Button
                         size="sm"
-                        className="btn-glow text-xs"
+                        className="btn-glow text-xs rounded-lg font-semibold"
                       >
                         <LayoutGrid className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> レイアウト
                       </Button>
@@ -529,10 +536,10 @@ export default function AdminSpacesPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className={`text-xs ${
+                      className={`text-xs rounded-lg font-medium border-border/60 ${
                         space.time_slot_count === 0
-                          ? "border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 font-semibold animate-pulse"
-                          : ""
+                          ? "border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 font-semibold animate-pulse"
+                          : "hover:border-primary/40 hover:text-primary"
                       }`}
                       onClick={() => openTimeSlots(space)}
                     >
@@ -543,7 +550,7 @@ export default function AdminSpacesPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-xs"
+                      className="text-xs rounded-lg font-medium border-border/60 hover:border-foreground/20"
                       onClick={() => openSettings(space)}
                     >
                       <Settings className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> 基本設定
@@ -551,7 +558,7 @@ export default function AdminSpacesPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-xs text-destructive hover:bg-destructive/5 hover:text-destructive border-destructive/20"
+                      className="text-xs rounded-lg font-medium text-destructive/70 hover:bg-destructive/5 hover:text-destructive border-destructive/20 hover:border-destructive/30"
                       onClick={() => openDelete(space)}
                     >
                       <Trash2 className="w-3.5 h-3.5 inline-block mr-1 -mt-0.5" /> 削除
@@ -563,20 +570,22 @@ export default function AdminSpacesPage() {
           </div>
         ) : (
           /* Empty state */
-          <Card className="py-20 border-border/40">
+          <Card className="py-20 border-border/50 shadow-premium bg-gradient-to-b from-card to-card/80">
             <CardContent className="text-center">
-              <Building2 className="w-14 h-14 text-muted-foreground/25 mx-auto mb-5" />
-              <h2 className="text-xl font-semibold tracking-tight text-foreground mb-2">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 mx-auto mb-5 flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-primary/40" />
+              </div>
+              <h2 className="text-xl font-bold tracking-tight text-foreground mb-2">
                 スペースがまだありません
               </h2>
-              <p className="text-muted-foreground mb-8 text-base">
+              <p className="text-muted-foreground mb-8 text-base max-w-sm mx-auto">
                 最初のスペースを作成して、座席レイアウトを設定しましょう
               </p>
               <Button
-                className="btn-glow"
+                className="btn-glow text-base px-6 py-5 rounded-xl font-semibold"
                 onClick={() => setCreateOpen(true)}
               >
-                + 新規スペース作成
+                <Plus className="w-5 h-5 mr-1.5" /> 新規スペース作成
               </Button>
             </CardContent>
           </Card>
@@ -585,40 +594,40 @@ export default function AdminSpacesPage() {
 
       {/* ===== Create Wizard (Multi-step) ===== */}
       <Dialog open={createOpen} onOpenChange={(v) => { if (!v) resetWizard(); setCreateOpen(v); }}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
-          {/* Wizard Header */}
-          <div className="px-6 pt-6 pb-4 border-b border-border/40">
-            <DialogTitle className="text-xl font-bold tracking-tight">新規スペース作成</DialogTitle>
-            <DialogDescription className="text-sm mt-1">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] p-0 !flex !flex-col overflow-hidden">
+          {/* Wizard Header - fixed */}
+          <div className="px-6 pt-6 pb-4 border-b border-border/50 shrink-0 bg-gradient-to-b from-background to-background/95">
+            <DialogTitle className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">新規スペース作成</DialogTitle>
+            <DialogDescription className="text-sm mt-1 text-muted-foreground/80">
               {wizardStep === 1 && "基本情報を入力してください"}
               {wizardStep === 2 && "予約可能な時間帯を設定してください"}
               {wizardStep === 3 && "設定内容を確認して作成してください"}
             </DialogDescription>
             {/* Step indicator */}
-            <div className="flex items-center gap-2 mt-5">
+            <div className="flex items-center gap-1.5 mt-5">
               {[
                 { num: 1, label: "基本情報" },
                 { num: 2, label: "時間帯" },
                 { num: 3, label: "確認" },
               ].map((s, i) => (
-                <div key={s.num} className="flex items-center gap-2">
+                <div key={s.num} className="flex items-center gap-1.5 flex-1">
                   {i > 0 && (
-                    <div className={`w-8 h-0.5 rounded-full transition-colors duration-300 ${
-                      wizardStep > i ? "bg-primary" : "bg-border/60"
+                    <div className={`flex-1 h-[2px] rounded-full transition-all duration-500 ${
+                      wizardStep > i ? "bg-gradient-to-r from-primary to-primary/80" : "bg-border"
                     }`} />
                   )}
                   <div className="flex items-center gap-1.5">
-                    <div className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold transition-all duration-300 ${
+                    <div className={`w-8 h-8 rounded-full text-xs flex items-center justify-center font-bold transition-all duration-500 ${
                       wizardStep > s.num
-                        ? "bg-primary text-white shadow-sm shadow-primary/25"
+                        ? "bg-gradient-to-br from-primary to-primary/80 text-white shadow-md shadow-primary/30"
                         : wizardStep === s.num
-                        ? "bg-primary text-white shadow-sm shadow-primary/25"
-                        : "bg-muted text-muted-foreground"
+                        ? "bg-gradient-to-br from-primary to-primary/80 text-white shadow-md shadow-primary/30 ring-4 ring-primary/15"
+                        : "bg-muted text-muted-foreground/60 border border-border"
                     }`}>
-                      {wizardStep > s.num ? <Check className="w-3.5 h-3.5" /> : s.num}
+                      {wizardStep > s.num ? <Check className="w-4 h-4" /> : s.num}
                     </div>
-                    <span className={`text-xs font-medium hidden sm:block ${
-                      wizardStep === s.num ? "text-primary" : "text-muted-foreground"
+                    <span className={`text-xs font-semibold hidden sm:block transition-colors duration-300 ${
+                      wizardStep === s.num ? "text-primary" : wizardStep > s.num ? "text-foreground/60" : "text-muted-foreground/50"
                     }`}>
                       {s.label}
                     </span>
@@ -628,8 +637,8 @@ export default function AdminSpacesPage() {
             </div>
           </div>
 
-          {/* Step Content */}
-          <div className="px-6 py-5 min-h-[320px]">
+          {/* Step Content - scrollable */}
+          <div className="px-6 py-5 min-h-[280px] overflow-y-auto flex-1">
             {/* ===== Step 1: Basic Info ===== */}
             {wizardStep === 1 && (
               <div className="space-y-5 animate-fade-in-up">
@@ -926,23 +935,26 @@ export default function AdminSpacesPage() {
             )}
           </div>
 
-          {/* Footer with navigation */}
-          <div className="px-6 py-4 border-t border-border/40 flex items-center justify-between bg-secondary/10">
+          {/* Footer with navigation - fixed */}
+          <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between bg-gradient-to-t from-secondary/20 to-secondary/5 shrink-0">
             <div>
               {wizardStep > 1 ? (
-                <Button variant="ghost" onClick={() => setWizardStep((s) => Math.max(1, s - 1) as 1 | 2 | 3)}>
+                <Button variant="ghost" className="text-foreground/60 hover:text-foreground" onClick={() => setWizardStep((s) => Math.max(1, s - 1) as 1 | 2 | 3)}>
                   <ChevronLeft className="w-4 h-4 mr-1" /> 戻る
                 </Button>
               ) : (
-                <Button variant="ghost" onClick={() => { setCreateOpen(false); resetWizard(); }}>
+                <Button variant="ghost" className="text-muted-foreground" onClick={() => { setCreateOpen(false); resetWizard(); }}>
                   キャンセル
                 </Button>
               )}
             </div>
-            <div>
+            <div className="flex items-center gap-3">
+              {wizardStep === 2 && wizardSlots.length === 0 && (
+                <span className="text-xs text-muted-foreground/60 hidden sm:block">あとから設定も可能です</span>
+              )}
               {wizardStep < 3 ? (
                 <Button
-                  className="btn-glow"
+                  className="btn-glow min-w-[140px]"
                   disabled={wizardStep === 1 && !newName.trim()}
                   onClick={() => setWizardStep((s) => Math.min(3, s + 1) as 1 | 2 | 3)}
                 >
@@ -951,7 +963,7 @@ export default function AdminSpacesPage() {
                 </Button>
               ) : (
                 <Button
-                  className="btn-glow"
+                  className="btn-glow min-w-[160px] text-base py-5"
                   onClick={handleCreateSpace}
                   disabled={isCreating}
                 >
@@ -962,7 +974,7 @@ export default function AdminSpacesPage() {
                     </>
                   ) : (
                     <>
-                      スペースを作成 <ArrowRight className="w-4 h-4 ml-1" />
+                      <Sparkles className="w-4 h-4 mr-1.5" /> スペースを作成
                     </>
                   )}
                 </Button>

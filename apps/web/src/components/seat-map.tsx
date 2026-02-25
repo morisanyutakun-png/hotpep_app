@@ -34,33 +34,33 @@ interface SeatMapProps {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; cursor: string }> = {
   available: {
-    bg: "bg-emerald-50/80 hover:bg-emerald-100",
+    bg: "bg-emerald-50 hover:bg-emerald-100 hover:shadow-md",
     text: "text-emerald-700",
-    border: "border-emerald-200/80",
+    border: "border-[1.5px] border-emerald-300/80",
     cursor: "cursor-pointer",
   },
   reserved: {
-    bg: "bg-muted/60",
-    text: "text-muted-foreground/60",
-    border: "border-border/40",
+    bg: "bg-muted/50",
+    text: "text-muted-foreground/50",
+    border: "border-[1.5px] border-border/60",
     cursor: "cursor-not-allowed",
   },
   my_reservation: {
     bg: "bg-violet-50",
     text: "text-violet-700",
-    border: "border-violet-200/80",
+    border: "border-[1.5px] border-violet-300/80",
     cursor: "cursor-not-allowed",
   },
   disabled: {
     bg: "bg-muted",
     text: "text-muted-foreground/50",
-    border: "border-border/40",
+    border: "border-[1.5px] border-border/60",
     cursor: "cursor-not-allowed",
   },
   selected: {
-    bg: "bg-blue-50",
-    text: "text-blue-700",
-    border: "border-blue-400 ring-2 ring-blue-200/60",
+    bg: "bg-primary/8 shadow-md",
+    text: "text-primary",
+    border: "border-2 border-primary ring-2 ring-primary/20",
     cursor: "cursor-pointer",
   },
 };
@@ -99,23 +99,23 @@ export function SeatMap({
       {/* 凡例 */}
       <div className="flex flex-wrap gap-4 text-xs text-foreground/70">
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-md bg-emerald-50/80 border border-emerald-200/80" />
+          <div className="w-4 h-4 rounded-md bg-emerald-50 border-[1.5px] border-emerald-300/80" />
           <span>空席</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-md bg-blue-50 border-2 border-blue-400" />
+          <div className="w-4 h-4 rounded-md bg-primary/8 border-2 border-primary" />
           <span>選択中</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-md bg-muted/60 border border-border/40" />
+          <div className="w-4 h-4 rounded-md bg-muted/50 border-[1.5px] border-border/60" />
           <span>予約済み</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-md bg-violet-50 border border-violet-200/80" />
+          <div className="w-4 h-4 rounded-md bg-violet-50 border-[1.5px] border-violet-300/80" />
           <span>自分の予約</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-md bg-muted border border-border/40">
+          <div className="w-4 h-4 rounded-md bg-muted border-[1.5px] border-border/60">
             <div className="w-full h-full rounded-md bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(0,0,0,0.06)_2px,rgba(0,0,0,0.06)_4px)]" />
           </div>
           <span>使用不可</span>
@@ -128,7 +128,7 @@ export function SeatMap({
 
       {/* 座席マップ */}
       <div className="overflow-x-auto pb-2">
-        <div className="inline-grid gap-1.5" style={{
+        <div className="inline-grid gap-1.5 p-3 bg-secondary/15 rounded-xl border border-border/50" style={{
           gridTemplateColumns: `repeat(${layoutJson.grid_cols}, minmax(0, 1fr))`,
         }}>
           {layoutJson.cells.map((row, rowIdx) =>
@@ -175,7 +175,7 @@ export function SeatMap({
                   onClick={() => handleClick(seatData)}
                   disabled={disabled || (seatData.status !== "available" && !isSelected)}
                   className={`
-                    w-12 h-12 sm:w-14 sm:h-14 rounded-lg border text-xs font-semibold
+                    w-12 h-12 sm:w-14 sm:h-14 rounded-lg text-xs font-semibold
                     flex flex-col items-center justify-center gap-0.5
                     transition-all duration-200 hover:scale-[1.04] active:scale-[0.97]
                     ${style.bg} ${style.text} ${style.border} ${style.cursor}

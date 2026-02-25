@@ -47,9 +47,9 @@ function autoLabel(row: number, col: number): string {
 }
 
 const CELL_TYPE_STYLES: Record<CellType, string> = {
-  seat: "bg-emerald-50/80 border-emerald-200/80 text-emerald-800",
-  aisle: "bg-card/50 border-dashed border-border/40",
-  blocked: "bg-muted border-border/60 text-muted-foreground",
+  seat: "bg-emerald-50 border-emerald-300/80 text-emerald-800 shadow-sm",
+  aisle: "bg-card/60 border-dashed border-border/80",
+  blocked: "bg-muted/80 border-border text-muted-foreground",
 };
 
 const SEAT_TYPE_DISPLAY: Record<SeatType, { label: string; icon: React.ReactNode }> = {
@@ -286,15 +286,15 @@ export default function LayoutEditorPage() {
               <div className="space-y-1 pt-2 border-t">
                 <p className="text-xs text-muted-foreground font-medium">凡例</p>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="w-4 h-4 rounded-md bg-emerald-50/80 border border-emerald-200/80" />
+                  <div className="w-4 h-4 rounded-md bg-emerald-50 border-[1.5px] border-emerald-300/80" />
                   <span>座席</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="w-4 h-4 rounded-md bg-card/50 border border-dashed border-border/40" />
+                  <div className="w-4 h-4 rounded-md bg-card/60 border-[1.5px] border-dashed border-border/80" />
                   <span>通路</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="w-4 h-4 rounded-md bg-muted border border-border/60" />
+                  <div className="w-4 h-4 rounded-md bg-muted/80 border-[1.5px] border-border" />
                   <span>ブロック</span>
                 </div>
               </div>
@@ -308,7 +308,7 @@ export default function LayoutEditorPage() {
                 <div className="text-center py-12 text-muted-foreground animate-pulse">読み込み中...</div>
               ) : (
                 <div
-                  className="inline-grid gap-1"
+                  className="inline-grid gap-1.5 p-2 bg-secondary/20 rounded-xl border border-border/60"
                   style={{
                     gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
                   }}
@@ -330,10 +330,10 @@ export default function LayoutEditorPage() {
                           onMouseEnter={() => handleCellEnter(rowIdx, colIdx)}
                           onClick={() => setSelectedCell({ row: rowIdx, col: colIdx })}
                           className={`
-                            w-11 h-11 sm:w-12 sm:h-12 rounded-lg border text-[10px] sm:text-xs
+                            w-11 h-11 sm:w-12 sm:h-12 rounded-lg border-[1.5px] text-[10px] sm:text-xs
                             flex flex-col items-center justify-center transition-all duration-200 select-none
                             ${CELL_TYPE_STYLES[cell.type]}
-                            ${isSelected ? "ring-2 ring-primary ring-offset-1" : ""}
+                            ${isSelected ? "ring-2 ring-primary ring-offset-2 shadow-md" : ""}
                             ${!cell.is_enabled && cell.type === "seat" ? "opacity-50" : ""}
                           `}
                         >
