@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -21,7 +21,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Building2, Clock, Sunrise, BookOpen, AlertTriangle, LayoutGrid, Settings, Trash2, Inbox, Timer, Zap, PenLine, ClipboardList, X } from "lucide-react";
+import { Building2, Clock, Sunrise, BookOpen, AlertTriangle, LayoutGrid, Settings, Trash2, Inbox, Timer, Zap, PenLine, ClipboardList, X, Check, ChevronRight, ChevronLeft, Plus, Minus, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 interface SpaceSummary {
@@ -107,21 +107,143 @@ export default function AdminSpacesPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedSpace, setSelectedSpace] = useState<SpaceSummary | null>(null);
 
-  // Create form
+  // ===== Create Wizard State =====
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
   const [newRows, setNewRows] = useState(8);
   const [newCols, setNewCols] = useState(10);
 
+  // Wizard Step 2: Time slots (local state before API)
+  const [wizardSlots, setWizardSlots] = useState<{ start: string; end: string; label: string }[]>([]);
+  const [wizardSlotMode, setWizardSlotMode] = useState<"preset" | "custom" | "manual">("preset");
+  const [customStart, setCustomStart] = useState("09:00");
+  const [customEnd, setCustomEnd] = useState("21:00");
+  const [customInterval, setCustomInterval] = useState(120); // minutes
+  const [manualStart, setManualStart] = useState("");
+  const [manualEnd, setManualEnd] = useState("");
+  const [manualLabel, setManualLabel] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
+
   // Settings form
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
 
-  // Time slot form
+  // Time slot form (for existing spaces)
   const [slotLabel, setSlotLabel] = useState("");
   const [slotStart, setSlotStart] = useState("");
   const [slotEnd, setSlotEnd] = useState("");
   const [isApplyingPreset, setIsApplyingPreset] = useState(false);
+
+  // ===== Custom interval generator =====
+  const generateCustomSlots = useCallback(() => {
+    const slots: { start: string; end: string; label: string }[] = [];
+    const [startH, startM] = customStart.split(":").map(Number);
+    const [endH, endM] = customEnd.split(":").map(Number);
+    const startMin = startH * 60 + startM;
+    const endMin = endH * 60 + endM;
+
+    if (startMin >= endMin || customInterval < 15) return;
+
+    for (let t = startMin; t + customInterval <= endMin; t += customInterval) {
+      const sh = Math.floor(t / 60).toString().padStart(2, "0");
+      const sm = (t % 60).toString().padStart(2, "0");
+      const eh = Math.floor((t + customInterval) / 60).toString().padStart(2, "0");
+      const em = ((t + customInterval) % 60).toString().padStart(2, "0");
+      slots.push({
+        start: `${sh}:${sm}`,
+        end: `${eh}:${em}`,
+        label: `${sh}:${sm}-${eh}:${em}`,
+      });
+    }
+    setWizardSlots(slots);
+  }, [customStart, customEnd, customInterval]);
+
+  // Apply preset to wizard
+  const applyPresetToWizard = useCallback((preset: (typeof TIME_PRESETS)[0]) => {
+    setWizardSlots(preset.slots.map((s) => ({
+      start: s.start,
+      end: s.end,
+      label: `${s.start}-${s.end}`,
+    })));
+  }, []);
+
+  // Add manual slot to wizard
+  const addManualSlot = useCallback(() => {
+    if (!manualStart || !manualEnd) return;
+    const label = manualLabel || `${manualStart}-${manualEnd}`;
+    setWizardSlots((prev) => [...prev, { start: manualStart, end: manualEnd, label }]);
+    setManualStart("");
+    setManualEnd("");
+    setManualLabel("");
+  }, [manualStart, manualEnd, manualLabel]);
+
+  // Remove wizard slot
+  const removeWizardSlot = useCallback((idx: number) => {
+    setWizardSlots((prev) => prev.filter((_, i) => i !== idx));
+  }, []);
+
+  // Reset wizard
+  const resetWizard = useCallback(() => {
+    setWizardStep(1);
+    setNewName("");
+    setNewDesc("");
+    setNewRows(8);
+    setNewCols(10);
+    setWizardSlots([]);
+    setWizardSlotMode("preset");
+    setCustomStart("09:00");
+    setCustomEnd("21:00");
+    setCustomInterval(120);
+    setManualStart("");
+    setManualEnd("");
+    setManualLabel("");
+    setIsCreating(false);
+  }, []);
+
+  // ===== Create space + time slots =====
+  const handleCreateSpace = useCallback(async () => {
+    if (!tenantId) return;
+    setIsCreating(true);
+    try {
+      // 1. Create space
+      const spaceData = await apiFetch<{ id: string }>(`/tenants/${tenantId}/spaces`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: newName,
+          description: newDesc || null,
+          grid_rows: newRows,
+          grid_cols: newCols,
+        }),
+      });
+
+      // 2. Add time slots
+      for (let i = 0; i < wizardSlots.length; i++) {
+        const s = wizardSlots[i];
+        await apiFetch(`/spaces/${spaceData.id}/time-slots`, {
+          method: "POST",
+          body: JSON.stringify({
+            label: s.label,
+            start_time: s.start,
+            end_time: s.end,
+            display_order: i,
+          }),
+        });
+      }
+
+      // 3. Success
+      toast.success("スペースを作成しました", {
+        description: `「${newName}」に ${wizardSlots.length} 件の時間帯を設定しました`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["adminSpacesSummary"] });
+      setCreateOpen(false);
+      resetWizard();
+    } catch (err: any) {
+      toast.error("作成に失敗しました", { description: err.message });
+    } finally {
+      setIsCreating(false);
+    }
+  }, [tenantId, newName, newDesc, newRows, newCols, wizardSlots, apiFetch, queryClient, resetWizard]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -144,32 +266,7 @@ export default function AdminSpacesPage() {
     enabled: !!selectedSpace && (settingsOpen || timeSlotsOpen),
   });
 
-  // Create space
-  const createMutation = useMutation({
-    mutationFn: () =>
-      apiFetch<{ id: string }>(`/tenants/${tenantId}/spaces`, {
-        method: "POST",
-        body: JSON.stringify({
-          name: newName,
-          description: newDesc || null,
-          grid_rows: newRows,
-          grid_cols: newCols,
-        }),
-      }),
-    onSuccess: (data) => {
-      toast.success("スペースを作成しました");
-      setCreateOpen(false);
-      setNewName("");
-      setNewDesc("");
-      setNewRows(8);
-      setNewCols(10);
-      queryClient.invalidateQueries({ queryKey: ["adminSpacesSummary"] });
-      router.push(`/admin/spaces/${data.id}/layout`);
-    },
-    onError: (err: Error) => {
-      toast.error("作成に失敗しました", { description: err.message });
-    },
-  });
+  // (Space creation handled by handleCreateSpace wizard)
 
   // Update space
   const updateMutation = useMutation({
@@ -486,71 +583,392 @@ export default function AdminSpacesPage() {
         )}
       </main>
 
-      {/* Create Dialog */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>新規スペース作成</DialogTitle>
-            <DialogDescription>
-              スペースの基本情報を入力してください。作成後にレイアウト編集画面へ進みます。
+      {/* ===== Create Wizard (Multi-step) ===== */}
+      <Dialog open={createOpen} onOpenChange={(v) => { if (!v) resetWizard(); setCreateOpen(v); }}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+          {/* Wizard Header */}
+          <div className="px-6 pt-6 pb-4 border-b border-border/40">
+            <DialogTitle className="text-xl font-bold tracking-tight">新規スペース作成</DialogTitle>
+            <DialogDescription className="text-sm mt-1">
+              {wizardStep === 1 && "基本情報を入力してください"}
+              {wizardStep === 2 && "予約可能な時間帯を設定してください"}
+              {wizardStep === 3 && "設定内容を確認して作成してください"}
             </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>スペース名 *</Label>
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="例: 3Fコワーキングエリア"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label>説明</Label>
-              <Input
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="例: 静かな作業スペース、Wi-Fi完備"
-                className="mt-1"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>グリッド行数</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={newRows}
-                  onChange={(e) => setNewRows(Number(e.target.value))}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>グリッド列数</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={newCols}
-                  onChange={(e) => setNewCols(Number(e.target.value))}
-                  className="mt-1"
-                />
-              </div>
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 mt-5">
+              {[
+                { num: 1, label: "基本情報" },
+                { num: 2, label: "時間帯" },
+                { num: 3, label: "確認" },
+              ].map((s, i) => (
+                <div key={s.num} className="flex items-center gap-2">
+                  {i > 0 && (
+                    <div className={`w-8 h-0.5 rounded-full transition-colors duration-300 ${
+                      wizardStep > i ? "bg-primary" : "bg-border/60"
+                    }`} />
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold transition-all duration-300 ${
+                      wizardStep > s.num
+                        ? "bg-primary text-white shadow-sm shadow-primary/25"
+                        : wizardStep === s.num
+                        ? "bg-primary text-white shadow-sm shadow-primary/25"
+                        : "bg-muted text-muted-foreground"
+                    }`}>
+                      {wizardStep > s.num ? <Check className="w-3.5 h-3.5" /> : s.num}
+                    </div>
+                    <span className={`text-xs font-medium hidden sm:block ${
+                      wizardStep === s.num ? "text-primary" : "text-muted-foreground"
+                    }`}>
+                      {s.label}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              キャンセル
-            </Button>
-            <Button
-              className="btn-glow"
-              onClick={() => createMutation.mutate()}
-              disabled={!newName.trim() || createMutation.isPending}
-            >
-              {createMutation.isPending ? "作成中..." : "作成してレイアウト編集へ"}
-            </Button>
-          </DialogFooter>
+
+          {/* Step Content */}
+          <div className="px-6 py-5 min-h-[320px]">
+            {/* ===== Step 1: Basic Info ===== */}
+            {wizardStep === 1 && (
+              <div className="space-y-5 animate-fade-in-up">
+                <div>
+                  <Label className="text-sm font-medium text-foreground/80">スペース名 <span className="text-destructive">*</span></Label>
+                  <Input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="例: 3Fコワーキングエリア"
+                    className="mt-1.5"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground/80">説明</Label>
+                  <Input
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    placeholder="例: 静かな作業スペース、Wi-Fi完備"
+                    className="mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-foreground/80 mb-2 block">座席グリッドサイズ</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-secondary/30 rounded-xl p-3">
+                      <Label className="text-xs text-muted-foreground">行数</Label>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => setNewRows(Math.max(1, newRows - 1))}><Minus className="w-3.5 h-3.5" /></Button>
+                        <span className="text-lg font-bold w-8 text-center">{newRows}</span>
+                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => setNewRows(Math.min(20, newRows + 1))}><Plus className="w-3.5 h-3.5" /></Button>
+                      </div>
+                    </div>
+                    <div className="bg-secondary/30 rounded-xl p-3">
+                      <Label className="text-xs text-muted-foreground">列数</Label>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => setNewCols(Math.max(1, newCols - 1))}><Minus className="w-3.5 h-3.5" /></Button>
+                        <span className="text-lg font-bold w-8 text-center">{newCols}</span>
+                        <Button size="sm" variant="outline" className="w-8 h-8 p-0 rounded-lg" onClick={() => setNewCols(Math.min(20, newCols + 1))}><Plus className="w-3.5 h-3.5" /></Button>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-2">レイアウトは作成後に詳細編集できます</p>
+                </div>
+              </div>
+            )}
+
+            {/* ===== Step 2: Time Slots ===== */}
+            {wizardStep === 2 && (
+              <div className="space-y-5 animate-fade-in-up">
+                {/* Mode tabs */}
+                <div className="flex bg-secondary/40 rounded-xl p-1 gap-1">
+                  {[
+                    { key: "preset" as const, label: "プリセット", icon: <Zap className="w-3.5 h-3.5" /> },
+                    { key: "custom" as const, label: "カスタム区間", icon: <Sparkles className="w-3.5 h-3.5" /> },
+                    { key: "manual" as const, label: "手動追加", icon: <PenLine className="w-3.5 h-3.5" /> },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setWizardSlotMode(tab.key)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                        wizardSlotMode === tab.key
+                          ? "bg-card text-primary shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {tab.icon} {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Preset mode */}
+                {wizardSlotMode === "preset" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {TIME_PRESETS.map((preset) => {
+                      const isSelected = wizardSlots.length === preset.slots.length &&
+                        wizardSlots.every((ws, i) => ws.start === preset.slots[i].start && ws.end === preset.slots[i].end);
+                      return (
+                        <button
+                          key={preset.name}
+                          onClick={() => applyPresetToWizard(preset)}
+                          className={`flex items-start gap-3 rounded-xl px-4 py-3.5 text-left transition-all duration-200 border ${
+                            isSelected
+                              ? "bg-primary/8 border-primary/40 ring-2 ring-primary/20 shadow-sm"
+                              : "bg-card border-border/40 hover:border-primary/30 hover:bg-primary/5"
+                          }`}
+                        >
+                          <span className={`mt-0.5 ${isSelected ? "text-primary" : "text-foreground/35"}`}>{preset.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium ${isSelected ? "text-primary" : "text-foreground"}`}>{preset.name}</p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              {preset.slots.length}枠 · {preset.slots.map((s) => `${s.start}`).join(", ")}
+                            </p>
+                          </div>
+                          {isSelected && <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Custom interval mode */}
+                {wizardSlotMode === "custom" && (
+                  <div className="space-y-4">
+                    <div className="bg-secondary/30 rounded-xl p-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs text-foreground/60">営業開始</Label>
+                          <Input type="time" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="mt-1 h-10" />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-foreground/60">営業終了</Label>
+                          <Input type="time" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="mt-1 h-10" />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-foreground/60 mb-2 block">1枠の長さ</Label>
+                        <div className="flex gap-2 flex-wrap">
+                          {[30, 45, 60, 90, 120, 180].map((min) => (
+                            <button
+                              key={min}
+                              onClick={() => setCustomInterval(min)}
+                              className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                                customInterval === min
+                                  ? "bg-primary text-white shadow-sm shadow-primary/25"
+                                  : "bg-card border border-border/40 hover:border-primary/30"
+                              }`}
+                            >
+                              {min < 60 ? `${min}分` : `${min / 60}時間`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <Button
+                        className="btn-glow w-full"
+                        onClick={generateCustomSlots}
+                      >
+                        <Sparkles className="w-4 h-4 mr-1.5" /> 時間帯を自動生成
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual mode */}
+                {wizardSlotMode === "manual" && (
+                  <div className="bg-secondary/30 rounded-xl p-4 space-y-3">
+                    <div className="grid grid-cols-5 gap-2 items-end">
+                      <div className="col-span-2">
+                        <Label className="text-xs text-foreground/60">開始</Label>
+                        <Input type="time" value={manualStart} onChange={(e) => setManualStart(e.target.value)} className="mt-1 h-9" />
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-xs text-foreground/60">終了</Label>
+                        <Input type="time" value={manualEnd} onChange={(e) => setManualEnd(e.target.value)} className="mt-1 h-9" />
+                      </div>
+                      <Button size="sm" className="btn-glow h-9" onClick={addManualSlot} disabled={!manualStart || !manualEnd}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-foreground/60">ラベル（任意）</Label>
+                      <Input
+                        value={manualLabel}
+                        onChange={(e) => setManualLabel(e.target.value)}
+                        placeholder="例: 午前の部"
+                        className="mt-1 h-9"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Current wizard slots preview */}
+                {wizardSlots.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-1.5">
+                        <ClipboardList className="w-4 h-4 opacity-50" /> 設定される時間帯
+                        <Badge variant="secondary" className="text-[11px]">{wizardSlots.length}枠</Badge>
+                      </h4>
+                      <Button size="sm" variant="ghost" className="text-xs text-destructive h-7" onClick={() => setWizardSlots([])}>
+                        クリア
+                      </Button>
+                    </div>
+                    {/* Timeline visual */}
+                    <div className="bg-secondary/20 rounded-xl p-3">
+                      <div className="flex gap-1 items-stretch h-9">
+                        {wizardSlots.map((slot, idx) => {
+                          const colors = [
+                            "bg-primary/20 border-primary/30 text-primary",
+                            "bg-blue-100/80 border-blue-200 text-blue-800",
+                            "bg-green-100/80 border-green-200 text-green-800",
+                            "bg-violet-100/80 border-violet-200 text-violet-800",
+                            "bg-pink-100/80 border-pink-200 text-pink-800",
+                            "bg-cyan-100/80 border-cyan-200 text-cyan-800",
+                            "bg-amber-100/80 border-amber-200 text-amber-800",
+                          ];
+                          return (
+                            <div key={idx} className={`flex-1 rounded-lg border flex items-center justify-center text-[10px] font-medium truncate ${colors[idx % colors.length]}`}>
+                              {slot.start}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* Individual slots */}
+                    <div className="max-h-36 overflow-y-auto space-y-1">
+                      {wizardSlots.map((slot, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-secondary/30 rounded-lg px-3 py-1.5 group">
+                          <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center flex-shrink-0">{idx + 1}</span>
+                          <span className="text-sm font-medium flex-1">{slot.label}</span>
+                          <span className="text-xs text-muted-foreground">{slot.start} → {slot.end}</span>
+                          <button onClick={() => removeWizardSlot(idx)} className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive/50 hover:text-destructive">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 bg-secondary/20 rounded-xl border border-dashed border-border/60">
+                    <Clock className="w-6 h-6 text-muted-foreground/25 mx-auto mb-1.5" />
+                    <p className="text-xs text-muted-foreground">
+                      プリセットを選択するか、カスタムで生成してください
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ===== Step 3: Confirmation ===== */}
+            {wizardStep === 3 && (
+              <div className="space-y-5 animate-fade-in-up">
+                <div className="bg-secondary/20 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Building2 className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold tracking-tight">{newName}</p>
+                      <p className="text-sm text-muted-foreground">{newDesc || "説明なし"}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-card rounded-xl p-3 text-center border border-border/40">
+                      <p className="text-xl font-bold text-foreground">{newRows}×{newCols}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">グリッドサイズ</p>
+                    </div>
+                    <div className="bg-card rounded-xl p-3 text-center border border-border/40">
+                      <p className="text-xl font-bold text-primary">{wizardSlots.length}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">時間帯</p>
+                    </div>
+                    <div className="bg-card rounded-xl p-3 text-center border border-border/40">
+                      <p className="text-xl font-bold text-foreground">
+                        {wizardSlots.length > 0 ? `${wizardSlots[0].start}` : "-"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {wizardSlots.length > 0 ? `〜${wizardSlots[wizardSlots.length - 1].end}` : "未設定"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {wizardSlots.length > 0 && (
+                    <div className="bg-card rounded-xl p-3 border border-border/40">
+                      <p className="text-xs text-muted-foreground mb-2 font-medium">タイムライン</p>
+                      <div className="flex gap-1 items-stretch h-8">
+                        {wizardSlots.map((slot, idx) => {
+                          const colors = [
+                            "bg-primary/20 border-primary/30 text-primary",
+                            "bg-blue-100/80 border-blue-200 text-blue-800",
+                            "bg-green-100/80 border-green-200 text-green-800",
+                            "bg-violet-100/80 border-violet-200 text-violet-800",
+                            "bg-pink-100/80 border-pink-200 text-pink-800",
+                          ];
+                          return (
+                            <div key={idx} className={`flex-1 rounded-md border flex items-center justify-center text-[9px] font-medium truncate ${colors[idx % colors.length]}`}>
+                              {slot.start}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+                  <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">作成後すぐに利用開始できます</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">座席レイアウトはスペース一覧から編集できます</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer with navigation */}
+          <div className="px-6 py-4 border-t border-border/40 flex items-center justify-between bg-secondary/10">
+            <div>
+              {wizardStep > 1 ? (
+                <Button variant="ghost" onClick={() => setWizardStep((s) => Math.max(1, s - 1) as 1 | 2 | 3)}>
+                  <ChevronLeft className="w-4 h-4 mr-1" /> 戻る
+                </Button>
+              ) : (
+                <Button variant="ghost" onClick={() => { setCreateOpen(false); resetWizard(); }}>
+                  キャンセル
+                </Button>
+              )}
+            </div>
+            <div>
+              {wizardStep < 3 ? (
+                <Button
+                  className="btn-glow"
+                  disabled={wizardStep === 1 && !newName.trim()}
+                  onClick={() => setWizardStep((s) => Math.min(3, s + 1) as 1 | 2 | 3)}
+                >
+                  {wizardStep === 1 ? "時間帯の設定へ" : "確認へ"}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              ) : (
+                <Button
+                  className="btn-glow"
+                  onClick={handleCreateSpace}
+                  disabled={isCreating}
+                >
+                  {isCreating ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      作成中...
+                    </>
+                  ) : (
+                    <>
+                      スペースを作成 <ArrowRight className="w-4 h-4 ml-1" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -575,7 +993,7 @@ export default function AdminSpacesPage() {
             {/* 現在の時間帯一覧 */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium text-sm text-gray-700 flex items-center gap-1.5">
+                <h3 className="font-medium text-sm text-foreground/80 flex items-center gap-1.5">
                   <ClipboardList className="w-4 h-4 opacity-50" /> 現在の時間帯
                   {timeSlots && (
                     <Badge variant="outline" className="text-[11px] font-normal">
