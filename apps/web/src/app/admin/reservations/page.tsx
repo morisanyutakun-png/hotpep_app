@@ -101,8 +101,8 @@ const STATUS_STYLES: Record<string, { label: string; className: string; cellBg: 
   },
   used: {
     label: "利用完了",
-    className: "bg-gray-100 text-gray-600 border-gray-200",
-    cellBg: "bg-gray-100 border-gray-300 text-gray-600",
+    className: "bg-muted/60 text-muted-foreground border-border/40",
+    cellBg: "bg-muted/60 border-border/60 text-muted-foreground",
   },
   cancelled: {
     label: "キャンセル",
@@ -190,33 +190,33 @@ export default function AdminReservationsPage() {
   if (authLoading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
-      <main className="max-w-[1400px] mx-auto px-4 py-8">
+      <main className="max-w-[1400px] mx-auto px-6 py-10">
         {/* Header + Controls */}
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-4 animate-fade-in-up">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">予約管理</h1>
-            <p className="text-muted-foreground mt-1">予約の確認・チェックイン・no_show処理</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">予約管理</h1>
+            <p className="text-muted-foreground mt-2 text-base">予約の確認・チェックイン・no_show処理</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             {/* View mode toggle */}
-            <div className="flex bg-white border rounded-lg overflow-hidden">
+            <div className="flex bg-card border border-border/60 rounded-xl overflow-hidden shadow-xs">
               <button
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                   viewMode === "list"
-                    ? "bg-orange-500 text-white"
-                    : "text-gray-600 hover:bg-gray-50"
+                    ? "bg-primary text-white"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                 }`}
                 onClick={() => setViewMode("list")}
               >
                 📋 リスト
               </button>
               <button
-                className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`px-4 py-2 text-sm font-semibold transition-all duration-200 ${
                   viewMode === "timeline"
-                    ? "bg-orange-500 text-white"
-                    : "text-gray-600 hover:bg-gray-50"
+                    ? "bg-primary text-white"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
                 }`}
                 onClick={() => setViewMode("timeline")}
               >
@@ -295,30 +295,30 @@ function ListView({
   onNoShow: (id: string) => void;
 }) {
   if (isLoading) {
-    return <div className="animate-pulse text-muted-foreground">読み込み中...</div>;
+    return <div className="animate-pulse text-muted-foreground py-8 text-center">読み込み中...</div>;
   }
 
   if (reservations.length === 0) {
     return (
-      <Card className="text-center py-12">
+      <Card className="text-center py-16 border-border/40">
         <CardContent>
-          <p className="text-muted-foreground">{filterDate} の予約はありません</p>
+          <p className="text-muted-foreground text-base">{filterDate} の予約はありません</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-xl border border-border/40 shadow-premium">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b bg-gray-50/80">
-            <th className="text-left p-3 font-semibold">利用者</th>
-            <th className="text-left p-3 font-semibold">スペース</th>
-            <th className="text-left p-3 font-semibold">座席</th>
-            <th className="text-left p-3 font-semibold">時間帯</th>
-            <th className="text-left p-3 font-semibold">ステータス</th>
-            <th className="text-left p-3 font-semibold">操作</th>
+          <tr className="border-b bg-secondary/40">
+            <th className="text-left p-4 font-semibold text-foreground/70">利用者</th>
+            <th className="text-left p-4 font-semibold text-foreground/70">スペース</th>
+            <th className="text-left p-4 font-semibold text-foreground/70">座席</th>
+            <th className="text-left p-4 font-semibold text-foreground/70">時間帯</th>
+            <th className="text-left p-4 font-semibold text-foreground/70">ステータス</th>
+            <th className="text-left p-4 font-semibold text-foreground/70">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -329,18 +329,18 @@ function ListView({
               cellBg: "",
             };
             return (
-              <tr key={r.id} className="border-b hover:bg-gray-50/50">
-                <td className="p-3 font-medium">{r.user_display_name || "-"}</td>
-                <td className="p-3">{r.space_name}</td>
-                <td className="p-3">
+              <tr key={r.id} className="border-b border-border/40 hover:bg-accent/20 transition-colors">
+                <td className="p-4 font-medium text-foreground">{r.user_display_name || "-"}</td>
+                <td className="p-4 text-foreground/80">{r.space_name}</td>
+                <td className="p-4">
                   <Badge variant="outline">{r.seat_label}</Badge>
                 </td>
-                <td className="p-3">{r.time_slot_label}</td>
-                <td className="p-3">
+                <td className="p-4 text-foreground/80">{r.time_slot_label}</td>
+                <td className="p-4">
                   <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
                 </td>
-                <td className="p-3">
-                  <div className="flex gap-1.5">
+                <td className="p-4">
+                  <div className="flex gap-2">
                     {r.status === "booked" && (
                       <>
                         <Button
@@ -406,14 +406,14 @@ function TimelineView({
   onNoShow: (id: string) => void;
 }) {
   if (isLoading) {
-    return <div className="animate-pulse text-muted-foreground">読み込み中...</div>;
+    return <div className="animate-pulse text-muted-foreground py-8 text-center">読み込み中...</div>;
   }
 
   if (!timeline || timeline.seats.length === 0 || timeline.time_slots.length === 0) {
     return (
-      <Card className="text-center py-12">
+      <Card className="text-center py-16 border-border/40">
         <CardContent>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-base">
             {filterDate} のタイムラインデータがありません（スペース・座席・時間帯が未設定の可能性があります）
           </p>
         </CardContent>
@@ -442,7 +442,7 @@ function TimelineView({
         {/* Summary stats */}
         <div className="flex gap-4 flex-wrap">
           <div className="flex items-center gap-2 text-sm">
-            <div className="w-4 h-4 rounded bg-gray-50 border border-gray-200" />
+            <div className="w-4 h-4 rounded-md bg-secondary/40 border border-border/40" />
             <span className="text-muted-foreground">空席: {availableCells}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
@@ -454,7 +454,7 @@ function TimelineView({
             <span className="text-muted-foreground">チェックイン</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300" />
+            <div className="w-4 h-4 rounded-md bg-muted/60 border border-border/60" />
             <span className="text-muted-foreground">利用完了</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
@@ -467,30 +467,30 @@ function TimelineView({
         </div>
 
         {/* Timeline matrix */}
-        <div className="overflow-x-auto border rounded-lg bg-white shadow-sm">
+        <div className="overflow-x-auto border border-border/40 rounded-2xl bg-card shadow-premium">
           <table className="w-full text-xs border-collapse">
-            <thead className="sticky top-0 z-10 bg-white">
+            <thead className="sticky top-0 z-10 bg-card">
               <tr>
-                <th className="sticky left-0 z-20 bg-gray-100 border-b border-r p-2 text-left font-semibold text-gray-600 min-w-[100px]">
+                <th className="sticky left-0 z-20 bg-secondary/60 border-b border-r border-border/40 p-2 text-left font-semibold text-foreground/70 min-w-[100px]">
                   時間帯
                 </th>
                 {seats.map((seat) => (
                   <th
                     key={seat.id}
-                    className="border-b border-r p-2 text-center font-semibold text-gray-600 min-w-[80px] bg-gray-50"
+                    className="border-b border-r border-border/40 p-2 text-center font-semibold text-foreground/70 min-w-[80px] bg-secondary/30"
                   >
                     <div>{seat.label}</div>
-                    <div className="text-[10px] font-normal text-gray-400">{seat.seat_type}</div>
+                    <div className="text-[10px] font-normal text-muted-foreground">{seat.seat_type}</div>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {time_slots.map((slot) => (
-                <tr key={slot.id} className="hover:bg-gray-50/30">
-                  <td className="sticky left-0 z-10 bg-gray-50 border-b border-r p-2 font-medium text-gray-700 whitespace-nowrap">
+                <tr key={slot.id} className="hover:bg-secondary/20">
+                  <td className="sticky left-0 z-10 bg-secondary/30 border-b border-r border-border/40 p-2 font-medium text-foreground/80 whitespace-nowrap">
                     <div>{slot.label}</div>
-                    <div className="text-[10px] text-gray-400">
+                    <div className="text-[10px] text-muted-foreground">
                       {slot.start_time} - {slot.end_time}
                     </div>
                   </td>
@@ -500,7 +500,7 @@ function TimelineView({
 
                     if (!cell) {
                       return (
-                        <td key={seat.id} className="border-b border-r p-1 bg-gray-50">
+                        <td key={seat.id} className="border-b border-r border-border/40 p-1 bg-secondary/20">
                           <div className="h-10" />
                         </td>
                       );
@@ -508,9 +508,9 @@ function TimelineView({
 
                     if (!res) {
                       return (
-                        <td key={seat.id} className="border-b border-r p-1">
-                          <div className="h-10 rounded bg-gray-50/50 border border-dashed border-gray-200 flex items-center justify-center">
-                            <span className="text-gray-300 text-[10px]">空席</span>
+                        <td key={seat.id} className="border-b border-r border-border/40 p-1">
+                          <div className="h-10 rounded-lg bg-secondary/20 border border-dashed border-border/40 flex items-center justify-center">
+                            <span className="text-muted-foreground/40 text-[10px]">空席</span>
                           </div>
                         </td>
                       );
@@ -518,7 +518,7 @@ function TimelineView({
 
                     const statusInfo = STATUS_STYLES[res.status] || {
                       label: res.status,
-                      cellBg: "bg-gray-100 border-gray-300 text-gray-600",
+                      cellBg: "bg-muted/60 border-border/60 text-muted-foreground",
                     };
 
                     return (

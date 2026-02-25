@@ -15,7 +15,7 @@ interface SpaceMiniMapProps {
 export function SpaceMiniMap({ layoutJson, gridRows, gridCols }: SpaceMiniMapProps) {
   if (!layoutJson?.cells) {
     return (
-      <div className="w-full aspect-[4/3] bg-gray-50 rounded-md border border-dashed border-gray-200 flex items-center justify-center">
+      <div className="w-full aspect-[4/3] bg-secondary/40 rounded-xl border border-dashed border-border/60 flex items-center justify-center">
         <span className="text-xs text-muted-foreground">未設定</span>
       </div>
     );
@@ -25,7 +25,7 @@ export function SpaceMiniMap({ layoutJson, gridRows, gridCols }: SpaceMiniMapPro
   const cols = rows > 0 ? layoutJson.cells[0].length : 0;
 
   return (
-    <div className="w-full aspect-[4/3] bg-gray-50 rounded-md border border-gray-200 p-2 flex items-center justify-center">
+    <div className="w-full aspect-[4/3] bg-secondary/30 rounded-xl border border-border/40 p-2 flex items-center justify-center">
       <div
         className="inline-grid gap-px"
         style={{
@@ -37,11 +37,11 @@ export function SpaceMiniMap({ layoutJson, gridRows, gridCols }: SpaceMiniMapPro
         {layoutJson.cells.flat().map((cell, idx) => (
           <div
             key={idx}
-            className={`rounded-[1px] ${
+            className={`rounded-[2px] ${
               cell.type === "seat"
-                ? "bg-emerald-400"
+                ? "bg-primary/70"
                 : cell.type === "blocked"
-                ? "bg-gray-300"
+                ? "bg-muted-foreground/20"
                 : "bg-transparent"
             }`}
             style={{ width: "6px", height: "6px" }}

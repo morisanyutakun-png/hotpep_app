@@ -70,46 +70,46 @@ export default function MyReservationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 to-amber-50/50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">マイ予約</h1>
+      <main className="max-w-4xl mx-auto px-6 py-10">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-8 animate-fade-in-up">マイ予約</h1>
 
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-4 stagger-children">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-4">
-                  <div className="h-5 bg-gray-200 rounded w-1/3 mb-2" />
-                  <div className="h-4 bg-gray-100 rounded w-1/2" />
+              <Card key={i} className="animate-pulse border-border/40">
+                <CardContent className="p-5">
+                  <div className="h-5 bg-muted rounded-lg w-1/3 mb-3" />
+                  <div className="h-4 bg-muted/60 rounded-lg w-1/2" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : reservations && reservations.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-4 stagger-children">
             {reservations.map((r) => {
               const statusInfo = STATUS_MAP[r.status] || { label: r.status, variant: "outline" as const };
               return (
-                <Card key={r.id} className="hover:shadow-sm transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">{r.space_name}</span>
+                <Card key={r.id} className="hover:shadow-premium-hover transition-all duration-300 border-border/40">
+                  <CardContent className="p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-semibold tracking-tight text-foreground">{r.space_name}</span>
                           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                         </div>
-                        <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-                          <span>📅 {format(new Date(r.date), "M月d日 (EEE)", { locale: ja })}</span>
-                          <span>🕐 {r.time_slot_label}</span>
-                          <span>💺 {r.seat_label}</span>
+                        <div className="text-sm text-muted-foreground flex flex-wrap gap-x-5 gap-y-1">
+                          <span className="flex items-center gap-1.5">📅 {format(new Date(r.date), "M月d日 (EEE)", { locale: ja })}</span>
+                          <span className="flex items-center gap-1.5">🕐 {r.time_slot_label}</span>
+                          <span className="flex items-center gap-1.5">💺 {r.seat_label}</span>
                         </div>
                       </div>
                       {r.status === "booked" && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 self-start"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/5 self-start"
                           onClick={() => cancelMutation.mutate(r.id)}
                           disabled={cancelMutation.isPending}
                         >
@@ -123,11 +123,11 @@ export default function MyReservationsPage() {
             })}
           </div>
         ) : (
-          <Card className="text-center py-12">
+          <Card className="text-center py-16 border-border/40">
             <CardContent>
-              <p className="text-muted-foreground mb-4">予約はまだありません</p>
+              <p className="text-muted-foreground mb-5 text-base">予約はまだありません</p>
               <Button
-                className="bg-orange-500 hover:bg-orange-600"
+                className="btn-glow"
                 onClick={() => router.push("/")}
               >
                 スペースを探す

@@ -31,33 +31,33 @@ interface SeatMapProps {
 
 const STATUS_STYLES: Record<string, { bg: string; text: string; border: string; cursor: string }> = {
   available: {
-    bg: "bg-emerald-50 hover:bg-emerald-100",
+    bg: "bg-emerald-50/80 hover:bg-emerald-100",
     text: "text-emerald-700",
-    border: "border-emerald-300",
+    border: "border-emerald-200/80",
     cursor: "cursor-pointer",
   },
   reserved: {
-    bg: "bg-gray-100",
-    text: "text-gray-400",
-    border: "border-gray-200",
+    bg: "bg-muted/60",
+    text: "text-muted-foreground/60",
+    border: "border-border/40",
     cursor: "cursor-not-allowed",
   },
   my_reservation: {
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    border: "border-purple-300",
+    bg: "bg-violet-50",
+    text: "text-violet-700",
+    border: "border-violet-200/80",
     cursor: "cursor-not-allowed",
   },
   disabled: {
-    bg: "bg-gray-200",
-    text: "text-gray-400",
-    border: "border-gray-300",
+    bg: "bg-muted",
+    text: "text-muted-foreground/50",
+    border: "border-border/40",
     cursor: "cursor-not-allowed",
   },
   selected: {
-    bg: "bg-blue-100",
+    bg: "bg-blue-50",
     text: "text-blue-700",
-    border: "border-blue-500 ring-2 ring-blue-300",
+    border: "border-blue-400 ring-2 ring-blue-200/60",
     cursor: "cursor-pointer",
   },
 };
@@ -94,30 +94,30 @@ export function SeatMap({
   return (
     <div className="space-y-4">
       {/* 凡例 */}
-      <div className="flex flex-wrap gap-3 text-xs">
+      <div className="flex flex-wrap gap-4 text-xs text-foreground/70">
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded bg-emerald-50 border border-emerald-300" />
+          <div className="w-4 h-4 rounded-md bg-emerald-50/80 border border-emerald-200/80" />
           <span>空席</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded bg-blue-100 border-2 border-blue-500" />
+          <div className="w-4 h-4 rounded-md bg-blue-50 border-2 border-blue-400" />
           <span>選択中</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded bg-gray-100 border border-gray-200" />
+          <div className="w-4 h-4 rounded-md bg-muted/60 border border-border/40" />
           <span>予約済み</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded bg-purple-50 border border-purple-300" />
+          <div className="w-4 h-4 rounded-md bg-violet-50 border border-violet-200/80" />
           <span>自分の予約</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300">
-            <div className="w-full h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(0,0,0,0.1)_2px,rgba(0,0,0,0.1)_4px)]" />
+          <div className="w-4 h-4 rounded-md bg-muted border border-border/40">
+            <div className="w-full h-full rounded-md bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(0,0,0,0.06)_2px,rgba(0,0,0,0.06)_4px)]" />
           </div>
           <span>使用不可</span>
         </div>
-        <div className="flex items-center gap-1.5 ml-2 border-l pl-2">
+        <div className="flex items-center gap-1.5 ml-2 border-l border-border/40 pl-3">
           <span>🤫 静か席</span>
           <span>🔌 コンセント</span>
         </div>
@@ -143,9 +143,9 @@ export function SeatMap({
                 return (
                   <div
                     key={`${rowIdx}-${colIdx}`}
-                    className="w-12 h-12 sm:w-14 sm:h-14 bg-gray-200 rounded-md border border-gray-300"
+                    className="w-12 h-12 sm:w-14 sm:h-14 bg-muted rounded-lg border border-border/40"
                   >
-                    <div className="w-full h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(0,0,0,0.1)_2px,rgba(0,0,0,0.1)_4px)] rounded-md" />
+                    <div className="w-full h-full bg-[repeating-linear-gradient(45deg,transparent,transparent_2px,rgba(0,0,0,0.06)_2px,rgba(0,0,0,0.06)_4px)] rounded-lg" />
                   </div>
                 );
               }
@@ -172,11 +172,11 @@ export function SeatMap({
                   onClick={() => handleClick(seatData)}
                   disabled={disabled || (seatData.status !== "available" && !isSelected)}
                   className={`
-                    w-12 h-12 sm:w-14 sm:h-14 rounded-md border text-xs font-medium
+                    w-12 h-12 sm:w-14 sm:h-14 rounded-lg border text-xs font-semibold
                     flex flex-col items-center justify-center gap-0.5
-                    transition-all duration-150
+                    transition-all duration-200 hover:scale-[1.04] active:scale-[0.97]
                     ${style.bg} ${style.text} ${style.border} ${style.cursor}
-                    ${disabled ? "opacity-60" : ""}
+                    ${disabled ? "opacity-50" : ""}
                   `}
                   title={`${seatData.label} (${seatData.seat_type})`}
                 >

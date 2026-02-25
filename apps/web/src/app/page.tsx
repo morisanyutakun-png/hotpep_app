@@ -48,16 +48,16 @@ export default function HomePage() {
 
   if (!tenantId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50/50 to-amber-50/50">
+      <div className="min-h-screen bg-warm-gradient">
         <Header />
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <Card className="text-center py-12">
-            <CardContent className="space-y-4">
-              <p className="text-lg font-medium text-gray-900">テナントが設定されていません</p>
-              <p className="text-muted-foreground">
+        <main className="max-w-7xl mx-auto px-6 py-12">
+          <Card className="text-center py-16 shadow-premium-lg border-border/40">
+            <CardContent className="space-y-5">
+              <p className="text-lg font-semibold tracking-tight text-foreground">テナントが設定されていません</p>
+              <p className="text-muted-foreground max-w-sm mx-auto">
                 アカウントにテナントが紐づいていません。新しいアカウントを作成してください。
               </p>
-              <div className="flex justify-center gap-3">
+              <div className="flex justify-center gap-3 pt-2">
                 <Button
                   variant="outline"
                   onClick={() => { logout(); router.push("/login"); }}
@@ -65,7 +65,7 @@ export default function HomePage() {
                   ログアウト
                 </Button>
                 <Button
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="btn-glow"
                   onClick={() => { logout(); router.push("/register"); }}
                 >
                   アカウント再作成
@@ -79,60 +79,60 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 to-amber-50/50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">スペース一覧</h1>
-          <p className="text-muted-foreground mt-1">
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="mb-10 animate-fade-in-up">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">スペース一覧</h1>
+          <p className="text-muted-foreground mt-2 text-base">
             予約したいスペースを選んでください
           </p>
         </div>
 
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
+              <Card key={i} className="animate-pulse border-border/30">
                 <CardHeader>
-                  <div className="h-6 bg-gray-200 rounded w-1/2" />
-                  <div className="h-4 bg-gray-100 rounded w-3/4 mt-2" />
+                  <div className="h-6 bg-muted rounded-lg w-1/2" />
+                  <div className="h-4 bg-muted/60 rounded-lg w-3/4 mt-3" />
                 </CardHeader>
                 <CardContent>
-                  <div className="h-10 bg-gray-100 rounded" />
+                  <div className="h-11 bg-muted/40 rounded-xl" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : spaces && spaces.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
             {spaces.map((space) => (
               <Card
                 key={space.id}
-                className="hover:shadow-md transition-shadow cursor-pointer group"
+                className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-border/40"
                 onClick={() => router.push(`/spaces/${space.id}`)}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg group-hover:text-orange-600 transition-colors">
+                    <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
                       {space.name}
                     </CardTitle>
-                    <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
+                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 font-medium">
                       予約可能
                     </Badge>
                   </div>
-                  <CardDescription className="line-clamp-2">
+                  <CardDescription className="line-clamp-2 leading-relaxed">
                     {space.description || "説明はありません"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-sm text-muted-foreground font-medium">
                       座席あり
                     </span>
                     <Button
                       size="sm"
-                      className="bg-orange-500 hover:bg-orange-600"
+                      className="btn-glow group-hover:shadow-md transition-all duration-200"
                     >
                       予約する →
                     </Button>
@@ -142,9 +142,9 @@ export default function HomePage() {
             ))}
           </div>
         ) : (
-          <Card className="text-center py-12">
+          <Card className="text-center py-16 border-border/40">
             <CardContent>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-base">
                 まだスペースが登録されていません
               </p>
             </CardContent>

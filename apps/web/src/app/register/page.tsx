@@ -156,41 +156,42 @@ export default function RegisterPage() {
   const currentStepIndex = stepLabels.findIndex((s) => s.key === step);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-2">
-            <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
-              <span className="text-white text-xl font-bold">H</span>
+    <div className="min-h-screen flex items-center justify-center bg-warm-gradient p-4">
+      <div className="w-full max-w-md animate-fade-in-up">
+      <Card className="shadow-premium-lg border-border/40">
+        <CardHeader className="space-y-1 text-center pb-2">
+          <div className="flex justify-center mb-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
+              <span className="text-white text-2xl font-bold tracking-tight">H</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">HotPep セットアップ</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold tracking-tight">HotPep セットアップ</CardTitle>
+          <CardDescription className="text-muted-foreground/80">
             テナント登録とアカウント作成
           </CardDescription>
 
           {/* ステップインジケーター */}
-          <div className="flex items-center justify-center gap-2 pt-3">
+          <div className="flex items-center justify-center gap-2 pt-4">
             {stepLabels.map((s, i) => (
               <div key={s.key} className="flex items-center gap-2">
                 <div className="flex flex-col items-center">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                       i < currentStepIndex
-                        ? "bg-green-500 text-white"
+                        ? "bg-emerald-500 text-white shadow-sm shadow-emerald-200"
                         : i === currentStepIndex
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-200 text-gray-500"
+                        ? "bg-primary text-white shadow-sm shadow-primary/25"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {i < currentStepIndex ? "✓" : s.num}
                   </div>
-                  <span className={`text-xs mt-1 ${i === currentStepIndex ? "text-orange-600 font-medium" : "text-gray-400"}`}>
+                  <span className={`text-xs mt-1.5 font-medium ${i === currentStepIndex ? "text-primary" : "text-muted-foreground/60"}`}>
                     {s.label}
                   </span>
                 </div>
                 {i < stepLabels.length - 1 && (
-                  <div className={`w-8 h-0.5 mb-4 ${i < currentStepIndex ? "bg-green-500" : "bg-gray-200"}`} />
+                  <div className={`w-8 h-0.5 mb-5 rounded-full transition-colors duration-300 ${i < currentStepIndex ? "bg-emerald-500" : "bg-muted"}`} />
                 )}
               </div>
             ))}
@@ -200,12 +201,12 @@ export default function RegisterPage() {
         <CardContent>
           {/* Step 1: 認証 */}
           {step === "auth" && (
-            <form onSubmit={handleVerifyPassword} className="space-y-4">
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+            <form onSubmit={handleVerifyPassword} className="space-y-5">
+              <div className="p-4 bg-accent/60 border border-border/40 rounded-xl text-sm text-foreground/70">
                 セットアップを開始するには、認証パスワードを入力してください。
               </div>
               <div className="space-y-2">
-                <Label htmlFor="setupPassword">認証パスワード</Label>
+                <Label htmlFor="setupPassword" className="text-sm font-medium text-foreground/80">認証パスワード</Label>
                 <Input
                   id="setupPassword"
                   type="password"
@@ -218,7 +219,7 @@ export default function RegisterPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600"
+                className="w-full btn-glow"
                 disabled={isLoading || !setupPassword}
               >
                 {isLoading ? "認証中..." : "認証する"}
@@ -228,13 +229,13 @@ export default function RegisterPage() {
 
           {/* Step 2: テナント登録/選択 */}
           {step === "tenant" && (
-            <form onSubmit={handleTenantStep} className="space-y-4">
+            <form onSubmit={handleTenantStep} className="space-y-5">
               {tenants.length > 0 && (
                 <div className="flex gap-2">
                   <Button
                     type="button"
                     variant={tenantMode === "existing" ? "default" : "outline"}
-                    className={`flex-1 text-sm ${tenantMode === "existing" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                    className={`flex-1 text-sm ${tenantMode === "existing" ? "" : ""}`}
                     onClick={() => setTenantMode("existing")}
                   >
                     既存テナントを選択
@@ -242,7 +243,7 @@ export default function RegisterPage() {
                   <Button
                     type="button"
                     variant={tenantMode === "new" ? "default" : "outline"}
-                    className={`flex-1 text-sm ${tenantMode === "new" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+                    className={`flex-1 text-sm ${tenantMode === "new" ? "" : ""}`}
                     onClick={() => setTenantMode("new")}
                   >
                     新規テナント作成
@@ -315,7 +316,7 @@ export default function RegisterPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                  className="flex-1 btn-glow"
                   disabled={isLoading || (tenantMode === "new" && (!tenantName || !tenantSlug))}
                 >
                   {isLoading ? "処理中..." : "次へ"}
@@ -326,8 +327,8 @@ export default function RegisterPage() {
 
           {/* Step 3: アカウント作成 */}
           {step === "account" && (
-            <form onSubmit={handleCreateAccount} className="space-y-4">
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+            <form onSubmit={handleCreateAccount} className="space-y-5">
+              <div className="p-4 bg-emerald-50/60 border border-emerald-200/40 rounded-xl text-sm text-emerald-700">
                 テナント: {tenants.find((t) => t.id === selectedTenantId)?.name || "新規作成済み"}
               </div>
               <div className="space-y-2">
@@ -386,7 +387,7 @@ export default function RegisterPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                  className="flex-1 btn-glow"
                   disabled={isLoading}
                 >
                   {isLoading ? "作成中..." : "アカウント作成"}
@@ -395,17 +396,18 @@ export default function RegisterPage() {
             </form>
           )}
 
-          <div className="mt-4 text-center text-sm text-muted-foreground">
+          <div className="mt-5 text-center text-sm text-muted-foreground">
             既にアカウントをお持ちですか？{" "}
             <Link
               href="/login"
-              className="text-orange-600 hover:text-orange-700 font-medium underline"
+              className="text-primary hover:text-primary/80 font-semibold transition-colors"
             >
               ログイン
             </Link>
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

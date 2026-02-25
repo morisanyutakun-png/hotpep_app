@@ -209,9 +209,9 @@ export default function SpaceReservationPage() {
   const step3State = getStepState(3, selectedDate, selectedTimeSlotId, selectedSeatId);
 
   const stepBadgeClass = (state: "completed" | "active" | "upcoming") => {
-    if (state === "completed") return "bg-green-500 text-white";
-    if (state === "active") return "bg-orange-500 text-white";
-    return "bg-gray-300 text-gray-500";
+    if (state === "completed") return "bg-emerald-500 text-white shadow-sm shadow-emerald-200";
+    if (state === "active") return "bg-primary text-white shadow-sm shadow-primary/30";
+    return "bg-muted text-muted-foreground";
   };
 
   const stepIcon = (state: "completed" | "active" | "upcoming", num: number) => {
@@ -220,29 +220,29 @@ export default function SpaceReservationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 to-amber-50/50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-6 py-8">
         {/* スペース情報 */}
-        <div className="mb-6">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/")} className="mb-2 -ml-2">
+        <div className="mb-8 animate-fade-in-up">
+          <Button variant="ghost" size="sm" onClick={() => router.push("/")} className="mb-3 -ml-3 text-muted-foreground hover:text-foreground">
             ← スペース一覧に戻る
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">{space?.name || "読み込み中..."}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{space?.name || "読み込み中..."}</h1>
           {space?.description && (
-            <p className="text-muted-foreground mt-1">{space.description}</p>
+            <p className="text-muted-foreground mt-2 text-base">{space.description}</p>
           )}
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_320px] gap-6">
+        <div className="grid lg:grid-cols-[1fr_340px] gap-6">
           {/* 左: メインエリア */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Step 1: 日付選択 */}
-            <Card className={step1State === "active" ? "ring-2 ring-orange-200" : ""}>
+            <Card className={`border-border/40 transition-all duration-300 ${step1State === "active" ? "ring-2 ring-primary/20 shadow-premium" : ""}`}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${stepBadgeClass(step1State)}`}>
+                <CardTitle className="text-base flex items-center gap-2.5">
+                  <span className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold transition-all duration-300 ${stepBadgeClass(step1State)}`}>
                     {stepIcon(step1State, 1)}
                   </span>
                   日付を選択
@@ -254,23 +254,23 @@ export default function SpaceReservationPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
                   {dateOptions.map((d) => (
                     <button
                       key={d.value}
                       onClick={() => setSelectedDate(d.value)}
                       className={`
-                        flex-shrink-0 w-16 py-2.5 rounded-xl text-center transition-all duration-150
+                        flex-shrink-0 w-[4.25rem] py-3 rounded-2xl text-center transition-all duration-200
                         ${selectedDate === d.value
-                          ? "bg-orange-500 text-white shadow-md shadow-orange-200 scale-105"
-                          : "bg-white border border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                          ? "bg-primary text-white shadow-md shadow-primary/25 scale-105"
+                          : "bg-card border border-border/60 hover:border-primary/30 hover:bg-accent/40"
                         }
                       `}
                     >
-                      <span className={`block text-[11px] ${selectedDate === d.value ? "text-orange-100" : "text-muted-foreground"}`}>
+                      <span className={`block text-[11px] font-medium ${selectedDate === d.value ? "text-white/70" : "text-muted-foreground"}`}>
                         {d.isToday ? "今日" : d.weekday}
                       </span>
-                      <span className="block text-lg font-bold leading-tight">{d.dayLabel}</span>
+                      <span className="block text-lg font-bold leading-tight mt-0.5">{d.dayLabel}</span>
                     </button>
                   ))}
                 </div>
@@ -278,10 +278,10 @@ export default function SpaceReservationPage() {
             </Card>
 
             {/* Step 2: 時間帯選択 */}
-            <Card className={step2State === "active" ? "ring-2 ring-orange-200" : ""}>
+            <Card className={`border-border/40 transition-all duration-300 ${step2State === "active" ? "ring-2 ring-primary/20 shadow-premium" : ""}`}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${stepBadgeClass(step2State)}`}>
+                <CardTitle className="text-base flex items-center gap-2.5">
+                  <span className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold transition-all duration-300 ${stepBadgeClass(step2State)}`}>
                     {stepIcon(step2State, 2)}
                   </span>
                   時間帯を選択
@@ -294,24 +294,23 @@ export default function SpaceReservationPage() {
               </CardHeader>
               <CardContent>
                 {slotsLoading ? (
-                  <div className="flex items-center gap-2 py-4 justify-center text-sm text-muted-foreground">
-                    <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="flex items-center gap-2 py-6 justify-center text-sm text-muted-foreground">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     時間帯を読み込み中...
                   </div>
                 ) : slotsError ? (
-                  <div className="text-center py-4 space-y-2">
-                    <p className="text-sm text-red-500">時間帯の読み込みに失敗しました</p>
+                  <div className="text-center py-6 space-y-3">
+                    <p className="text-sm text-destructive">時間帯の読み込みに失敗しました</p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => refetchSlots()}
-                      className="text-xs"
                     >
                       再読み込み
                     </Button>
                   </div>
                 ) : hasTimeSlots ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                     {timeSlots.map((slot) => {
                       const isSelected = selectedTimeSlotId === slot.id;
                       return (
@@ -319,16 +318,16 @@ export default function SpaceReservationPage() {
                           key={slot.id}
                           onClick={() => setSelectedTimeSlotId(slot.id)}
                           className={`
-                            relative px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150
+                            relative px-3 py-3.5 rounded-2xl text-sm font-semibold transition-all duration-200
                             ${isSelected
-                              ? "bg-orange-500 text-white shadow-md shadow-orange-200 scale-[1.02]"
-                              : "bg-white border border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+                              ? "bg-primary text-white shadow-md shadow-primary/25 scale-[1.02]"
+                              : "bg-card border border-border/60 hover:border-primary/30 hover:bg-accent/40"
                             }
                           `}
                         >
-                          <span className="block font-semibold">{slot.label}</span>
+                          <span className="block">{slot.label}</span>
                           {isSelected && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center text-[10px] text-white shadow-sm">
+                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-[10px] text-white shadow-sm">
                               ✓
                             </span>
                           )}
@@ -351,15 +350,15 @@ export default function SpaceReservationPage() {
             </Card>
 
             {/* Step 3: 座席選択 */}
-            <Card className={step3State === "active" ? "ring-2 ring-orange-200" : ""}>
+            <Card className={`border-border/40 transition-all duration-300 ${step3State === "active" ? "ring-2 ring-primary/20 shadow-premium" : ""}`}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold transition-colors ${stepBadgeClass(step3State)}`}>
+                <CardTitle className="text-base flex items-center gap-2.5">
+                  <span className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold transition-all duration-300 ${stepBadgeClass(step3State)}`}>
                     {stepIcon(step3State, 3)}
                   </span>
                   座席を選択
                   {selectedSeatLabel && (
-                    <Badge className="bg-blue-100 text-blue-700 border-blue-300 ml-auto text-xs">
+                    <Badge className="bg-blue-50 text-blue-600 border border-blue-200/60 ml-auto text-xs font-medium">
                       {selectedSeatLabel}
                     </Badge>
                   )}
@@ -380,7 +379,7 @@ export default function SpaceReservationPage() {
                   </div>
                 ) : availLoading ? (
                   <div className="flex items-center gap-2 py-8 justify-center text-sm text-muted-foreground">
-                    <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     空き状況を確認中...
                   </div>
                 ) : availError ? (
@@ -431,7 +430,7 @@ export default function SpaceReservationPage() {
 
           {/* 右: 予約サマリー (Sticky) */}
           <div className="lg:sticky lg:top-20 lg:self-start">
-            <Card className={`shadow-lg transition-colors ${canReserve ? "border-orange-400 bg-orange-50/30" : "border-orange-200"}`}>
+            <Card className={`shadow-premium-lg transition-all duration-300 border-border/40 ${canReserve ? "ring-2 ring-primary/20" : ""}`}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   📋 予約内容
@@ -451,9 +450,9 @@ export default function SpaceReservationPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">時間帯</span>
-                    <span className={`font-medium ${selectedTimeSlot ? "" : "text-gray-400"}`}>
+                    <span className={`font-medium ${selectedTimeSlot ? "" : "text-muted-foreground/50"}`}>
                       {selectedTimeSlot ? (
-                        <Badge variant="secondary" className="bg-orange-100 text-orange-700 border-orange-200">
+                        <Badge variant="secondary" className="bg-primary/10 text-primary border border-primary/15 font-medium">
                           {selectedTimeSlot.label}
                         </Badge>
                       ) : (
@@ -465,11 +464,11 @@ export default function SpaceReservationPage() {
                     <span className="text-muted-foreground">座席</span>
                     <span className="font-medium">
                       {selectedSeatLabel ? (
-                        <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                        <Badge className="bg-blue-50 text-blue-600 border border-blue-200/60 font-medium">
                           {selectedSeatLabel}
                         </Badge>
                       ) : (
-                        <span className="text-gray-400">未選択</span>
+                        <span className="text-muted-foreground/50">未選択</span>
                       )}
                     </span>
                   </div>
@@ -490,8 +489,8 @@ export default function SpaceReservationPage() {
 
                   {isConfirming ? (
                     <div className="space-y-3">
-                      <div className="bg-orange-100 rounded-lg px-3 py-2 text-center">
-                        <p className="text-sm font-medium text-orange-700">
+                      <div className="bg-primary/8 rounded-xl px-4 py-3 text-center">
+                        <p className="text-sm font-semibold text-primary">
                           この内容で予約しますか？
                         </p>
                       </div>
@@ -507,7 +506,7 @@ export default function SpaceReservationPage() {
                         </Button>
                         <Button
                           size="sm"
-                          className="flex-1 bg-orange-500 hover:bg-orange-600"
+                          className="flex-1 btn-glow"
                           onClick={() => reservationMutation.mutate()}
                           disabled={reservationMutation.isPending}
                         >
@@ -524,10 +523,10 @@ export default function SpaceReservationPage() {
                     </div>
                   ) : (
                     <Button
-                      className={`w-full transition-all duration-200 ${
+                      className={`w-full transition-all duration-300 ${
                         canReserve
-                          ? "bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-200"
-                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          ? "btn-glow"
+                          : "bg-muted text-muted-foreground cursor-not-allowed"
                       }`}
                       disabled={!canReserve}
                       onClick={() => setIsConfirming(true)}

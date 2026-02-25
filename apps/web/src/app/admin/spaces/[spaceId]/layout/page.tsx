@@ -46,9 +46,9 @@ function autoLabel(row: number, col: number): string {
 }
 
 const CELL_TYPE_STYLES: Record<CellType, string> = {
-  seat: "bg-emerald-100 border-emerald-400 text-emerald-800",
-  aisle: "bg-white border-dashed border-gray-200",
-  blocked: "bg-gray-300 border-gray-400 text-gray-600",
+  seat: "bg-emerald-50/80 border-emerald-200/80 text-emerald-800",
+  aisle: "bg-card/50 border-dashed border-border/40",
+  blocked: "bg-muted border-border/60 text-muted-foreground",
 };
 
 const SEAT_TYPE_DISPLAY: Record<SeatType, { label: string; icon: string }> = {
@@ -186,20 +186,20 @@ export default function LayoutEditorPage() {
   if (authLoading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
       <main className="max-w-[1400px] mx-auto px-4 py-6">
         <div className="mb-4 flex items-center justify-between flex-wrap gap-3">
           <div>
-            <Button variant="ghost" size="sm" onClick={() => router.push("/admin/spaces")} className="-ml-2 mb-1">
+            <Button variant="ghost" size="sm" onClick={() => router.push("/admin/spaces")} className="-ml-2 mb-1 text-foreground/60 hover:text-foreground">
               ← スペース管理に戻る
             </Button>
-            <h1 className="text-xl font-bold text-gray-900">座席レイアウト編集</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">座席レイアウト編集</h1>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{seatCount} 席</Badge>
             <Button
-              className="bg-orange-500 hover:bg-orange-600"
+              className="btn-glow"
               onClick={() => saveMutation.mutate()}
               disabled={saveMutation.isPending}
             >
@@ -221,10 +221,10 @@ export default function LayoutEditorPage() {
                   <button
                     key={type}
                     onClick={() => setActiveTool(type)}
-                    className={`w-full text-left px-3 py-1.5 rounded text-sm transition-colors ${
+                    className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
                       activeTool === type
-                        ? "bg-orange-100 text-orange-700 font-medium"
-                        : "hover:bg-gray-100"
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "hover:bg-secondary/60"
                     }`}
                   >
                     {type === "seat" ? "💺 座席" : type === "aisle" ? "⬜ 通路" : "🚫 ブロック"}
@@ -239,10 +239,10 @@ export default function LayoutEditorPage() {
                     <button
                       key={type}
                       onClick={() => setActiveSeatType(type)}
-                      className={`w-full text-left px-3 py-1.5 rounded text-sm transition-colors ${
+                      className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
                         activeSeatType === type
-                          ? "bg-orange-100 text-orange-700 font-medium"
-                          : "hover:bg-gray-100"
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "hover:bg-secondary/60"
                       }`}
                     >
                       {SEAT_TYPE_DISPLAY[type].icon} {SEAT_TYPE_DISPLAY[type].label}
@@ -285,15 +285,15 @@ export default function LayoutEditorPage() {
               <div className="space-y-1 pt-2 border-t">
                 <p className="text-xs text-muted-foreground font-medium">凡例</p>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="w-4 h-4 rounded bg-emerald-100 border border-emerald-400" />
+                  <div className="w-4 h-4 rounded-md bg-emerald-50/80 border border-emerald-200/80" />
                   <span>座席</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="w-4 h-4 rounded bg-white border border-dashed border-gray-200" />
+                  <div className="w-4 h-4 rounded-md bg-card/50 border border-dashed border-border/40" />
                   <span>通路</span>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <div className="w-4 h-4 rounded bg-gray-300 border border-gray-400" />
+                  <div className="w-4 h-4 rounded-md bg-muted border border-border/60" />
                   <span>ブロック</span>
                 </div>
               </div>
@@ -329,10 +329,10 @@ export default function LayoutEditorPage() {
                           onMouseEnter={() => handleCellEnter(rowIdx, colIdx)}
                           onClick={() => setSelectedCell({ row: rowIdx, col: colIdx })}
                           className={`
-                            w-11 h-11 sm:w-12 sm:h-12 rounded border text-[10px] sm:text-xs
-                            flex flex-col items-center justify-center transition-all select-none
+                            w-11 h-11 sm:w-12 sm:h-12 rounded-lg border text-[10px] sm:text-xs
+                            flex flex-col items-center justify-center transition-all duration-200 select-none
                             ${CELL_TYPE_STYLES[cell.type]}
-                            ${isSelected ? "ring-2 ring-orange-500 ring-offset-1" : ""}
+                            ${isSelected ? "ring-2 ring-primary ring-offset-1" : ""}
                             ${!cell.is_enabled && cell.type === "seat" ? "opacity-50" : ""}
                           `}
                         >
@@ -347,7 +347,7 @@ export default function LayoutEditorPage() {
                             </>
                           )}
                           {cell.type === "blocked" && (
-                            <span className="text-gray-500">✕</span>
+                            <span className="text-muted-foreground/60">✕</span>
                           )}
                         </button>
                       );
@@ -392,7 +392,7 @@ export default function LayoutEditorPage() {
                               seat_type: e.target.value as SeatType,
                             })
                           }
-                          className="mt-1 w-full h-8 text-sm border rounded px-2"
+                          className="mt-1 w-full h-8 text-sm border border-border/60 rounded-lg px-2 bg-card/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
                         >
                           <option value="normal">通常</option>
                           <option value="quiet">静か席</option>

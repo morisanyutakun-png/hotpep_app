@@ -328,19 +328,19 @@ export default function AdminSpacesPage() {
   if (authLoading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50/50 to-amber-50/50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-10">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-10 animate-fade-in-up">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">スペース管理</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">スペース管理</h1>
+            <p className="text-muted-foreground mt-2 text-base">
               スペースの作成・設定・座席レイアウト編集
             </p>
           </div>
           <Button
-            className="bg-orange-500 hover:bg-orange-600 shadow-sm"
+            className="btn-glow"
             onClick={() => setCreateOpen(true)}
           >
             + 新規スペース作成
@@ -349,36 +349,36 @@ export default function AdminSpacesPage() {
 
         {/* Space list */}
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="animate-pulse">
+              <Card key={i} className="animate-pulse border-border/40">
                 <CardContent className="p-6">
-                  <div className="h-4 bg-gray-200 rounded w-2/3 mb-4" />
-                  <div className="aspect-[4/3] bg-gray-100 rounded mb-4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  <div className="h-4 bg-muted rounded-lg w-2/3 mb-4" />
+                  <div className="aspect-[4/3] bg-muted/60 rounded-xl mb-4" />
+                  <div className="h-3 bg-muted/40 rounded-lg w-1/2" />
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : spaces && spaces.length > 0 ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
             {spaces.map((space) => (
               <Card
                 key={space.id}
-                className="hover:shadow-lg transition-all duration-200 group"
+                className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 group border-border/40"
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-lg">{space.name}</CardTitle>
                     <div className="flex gap-1.5">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs font-medium">
                         {space.seat_count} 席
                       </Badge>
                       <Badge
                         variant="outline"
-                        className={`text-xs ${
+                        className={`text-xs font-medium ${
                           space.time_slot_count === 0
-                            ? "border-red-300 text-red-600 bg-red-50"
+                            ? "border-destructive/30 text-destructive bg-destructive/5"
                             : ""
                         }`}
                       >
@@ -386,7 +386,7 @@ export default function AdminSpacesPage() {
                       </Badge>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
+                  <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
                     {space.description || "説明なし"}
                   </p>
                 </CardHeader>
@@ -395,14 +395,14 @@ export default function AdminSpacesPage() {
                   {space.time_slot_count === 0 && (
                     <button
                       onClick={() => openTimeSlots(space)}
-                      className="w-full flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-left hover:bg-amber-100 transition-colors"
+                      className="w-full flex items-center gap-2.5 bg-accent/60 border border-border/40 rounded-xl px-4 py-3 text-left hover:bg-accent transition-all duration-200"
                     >
                       <span className="text-lg">⚠️</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-amber-800">
+                        <p className="text-xs font-semibold text-foreground/70">
                           時間帯が未設定です
                         </p>
-                        <p className="text-[11px] text-amber-600">
+                        <p className="text-[11px] text-muted-foreground">
                           タップして時間帯を設定 →
                         </p>
                       </div>
@@ -419,11 +419,11 @@ export default function AdminSpacesPage() {
                   </Link>
 
                   {/* Actions */}
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <Link href={`/admin/spaces/${space.id}/layout`} className="contents">
                       <Button
                         size="sm"
-                        className="bg-orange-500 hover:bg-orange-600 text-xs"
+                        className="btn-glow text-xs"
                       >
                         🪑 レイアウト
                       </Button>
@@ -433,7 +433,7 @@ export default function AdminSpacesPage() {
                       variant="outline"
                       className={`text-xs ${
                         space.time_slot_count === 0
-                          ? "border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 hover:text-amber-800 font-semibold animate-pulse"
+                          ? "border-primary/40 text-primary bg-primary/5 hover:bg-primary/10 font-semibold animate-pulse"
                           : ""
                       }`}
                       onClick={() => openTimeSlots(space)}
@@ -441,7 +441,7 @@ export default function AdminSpacesPage() {
                       🕐 時間帯 {space.time_slot_count > 0 && `(${space.time_slot_count})`}
                     </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <Button
                       size="sm"
                       variant="outline"
@@ -453,7 +453,7 @@ export default function AdminSpacesPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-xs text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+                      className="text-xs text-destructive hover:bg-destructive/5 hover:text-destructive border-destructive/20"
                       onClick={() => openDelete(space)}
                     >
                       🗑 削除
@@ -465,17 +465,17 @@ export default function AdminSpacesPage() {
           </div>
         ) : (
           /* Empty state */
-          <Card className="py-16">
+          <Card className="py-20 border-border/40">
             <CardContent className="text-center">
-              <div className="text-6xl mb-4">🏢</div>
-              <h2 className="text-xl font-semibold text-gray-700 mb-2">
+              <div className="text-6xl mb-5">🏢</div>
+              <h2 className="text-xl font-semibold tracking-tight text-foreground mb-2">
                 スペースがまだありません
               </h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-8 text-base">
                 最初のスペースを作成して、座席レイアウトを設定しましょう
               </p>
               <Button
-                className="bg-orange-500 hover:bg-orange-600"
+                className="btn-glow"
                 onClick={() => setCreateOpen(true)}
               >
                 + 新規スペース作成
@@ -543,7 +543,7 @@ export default function AdminSpacesPage() {
               キャンセル
             </Button>
             <Button
-              className="bg-orange-500 hover:bg-orange-600"
+              className="btn-glow"
               onClick={() => createMutation.mutate()}
               disabled={!newName.trim() || createMutation.isPending}
             >
@@ -596,7 +596,7 @@ export default function AdminSpacesPage() {
 
               {slotsLoading ? (
                 <div className="flex items-center gap-2 py-6 justify-center text-sm text-muted-foreground">
-                  <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   読み込み中...
                 </div>
               ) : timeSlots && timeSlots.length > 0 ? (
@@ -604,9 +604,9 @@ export default function AdminSpacesPage() {
                   {timeSlots.map((slot, idx) => (
                     <div
                       key={slot.id}
-                      className="flex items-center gap-3 bg-gray-50 hover:bg-gray-100 rounded-lg px-3 py-2.5 transition-colors group"
+                      className="flex items-center gap-3 bg-secondary/40 hover:bg-secondary/60 rounded-xl px-3 py-2.5 transition-colors group"
                     >
-                      <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-600 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                         {idx + 1}
                       </span>
                       <div className="flex-1 min-w-0">
@@ -628,7 +628,7 @@ export default function AdminSpacesPage() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                  <div className="text-center py-6 bg-secondary/40 rounded-xl border-2 border-dashed border-border/60">
                   <div className="text-3xl mb-2">📭</div>
                   <p className="text-sm text-muted-foreground">
                     時間帯がまだ設定されていません
@@ -643,20 +643,20 @@ export default function AdminSpacesPage() {
             {/* タイムラインのビジュアルプレビュー */}
             {timeSlots && timeSlots.length > 0 && (
               <div className="space-y-2">
-                <h3 className="font-medium text-sm text-gray-700">⏱ タイムライン</h3>
-                <div className="bg-gray-50 rounded-lg p-3">
+                <h3 className="font-medium text-sm text-foreground/80">⏱ タイムライン</h3>
+                <div className="bg-secondary/30 rounded-xl p-3">
                   <div className="flex gap-1 items-stretch h-10">
                     {timeSlots.map((slot, idx) => {
                       const colors = [
-                        "bg-orange-200 border-orange-300 text-orange-800",
-                        "bg-blue-200 border-blue-300 text-blue-800",
-                        "bg-green-200 border-green-300 text-green-800",
-                        "bg-purple-200 border-purple-300 text-purple-800",
-                        "bg-pink-200 border-pink-300 text-pink-800",
-                        "bg-cyan-200 border-cyan-300 text-cyan-800",
-                        "bg-amber-200 border-amber-300 text-amber-800",
-                        "bg-indigo-200 border-indigo-300 text-indigo-800",
-                        "bg-teal-200 border-teal-300 text-teal-800",
+                        "bg-primary/20 border-primary/30 text-primary",
+                        "bg-blue-100/80 border-blue-200 text-blue-800",
+                        "bg-green-100/80 border-green-200 text-green-800",
+                        "bg-violet-100/80 border-violet-200 text-violet-800",
+                        "bg-pink-100/80 border-pink-200 text-pink-800",
+                        "bg-cyan-100/80 border-cyan-200 text-cyan-800",
+                        "bg-amber-100/80 border-amber-200 text-amber-800",
+                        "bg-indigo-100/80 border-indigo-200 text-indigo-800",
+                        "bg-teal-100/80 border-teal-200 text-teal-800",
                       ];
                       return (
                         <div
@@ -675,7 +675,7 @@ export default function AdminSpacesPage() {
 
             {/* プリセットから一括設定 */}
             <div className="space-y-3 border-t pt-4">
-              <h3 className="font-medium text-sm text-gray-700 flex items-center gap-1.5">
+              <h3 className="font-medium text-sm text-foreground/80 flex items-center gap-1.5">
                 ⚡ プリセットから一括設定
               </h3>
               <p className="text-xs text-muted-foreground -mt-1">
@@ -692,11 +692,11 @@ export default function AdminSpacesPage() {
                     key={preset.name}
                     onClick={() => applyPreset(preset)}
                     disabled={isApplyingPreset}
-                    className="flex items-start gap-3 bg-white border border-gray-200 rounded-lg px-3 py-3 text-left hover:border-orange-300 hover:bg-orange-50 transition-all disabled:opacity-50"
+                    className="flex items-start gap-3 bg-card border border-border/40 rounded-xl px-3 py-3 text-left hover:border-primary/40 hover:bg-primary/5 transition-all disabled:opacity-50"
                   >
                     <span className="text-xl mt-0.5">{preset.icon}</span>
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{preset.name}</p>
+                      <p className="text-sm font-medium text-foreground">{preset.name}</p>
                       <p className="text-[11px] text-muted-foreground mt-0.5">
                         {preset.slots.map((s) => `${s.start}-${s.end}`).join("、")}
                       </p>
@@ -705,8 +705,8 @@ export default function AdminSpacesPage() {
                 ))}
               </div>
               {isApplyingPreset && (
-                <div className="flex items-center gap-2 justify-center text-sm text-orange-600 py-1">
-                  <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="flex items-center gap-2 justify-center text-sm text-primary py-1">
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   適用中...
                 </div>
               )}
@@ -714,13 +714,13 @@ export default function AdminSpacesPage() {
 
             {/* 手動追加 */}
             <div className="space-y-3 border-t pt-4">
-              <h3 className="font-medium text-sm text-gray-700 flex items-center gap-1.5">
+              <h3 className="font-medium text-sm text-foreground/80 flex items-center gap-1.5">
                 ✏️ 手動で追加
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <div className="bg-secondary/30 rounded-xl p-4 space-y-3">
                 <div className="grid grid-cols-5 gap-2 items-end">
                   <div className="col-span-2">
-                    <Label className="text-xs text-gray-600">開始時刻</Label>
+                    <Label className="text-xs text-foreground/60">開始時刻</Label>
                     <Input
                       type="time"
                       value={slotStart}
@@ -729,7 +729,7 @@ export default function AdminSpacesPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <Label className="text-xs text-gray-600">終了時刻</Label>
+                    <Label className="text-xs text-foreground/60">終了時刻</Label>
                     <Input
                       type="time"
                       value={slotEnd}
@@ -739,7 +739,7 @@ export default function AdminSpacesPage() {
                   </div>
                   <Button
                     size="sm"
-                    className="bg-orange-500 hover:bg-orange-600 h-9"
+                    className="btn-glow h-9"
                     onClick={handleAddSlot}
                     disabled={!slotStart || !slotEnd || createSlotMutation.isPending}
                   >
@@ -747,7 +747,7 @@ export default function AdminSpacesPage() {
                   </Button>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600">ラベル（任意 — 空欄で「開始-終了」が自動設定）</Label>
+                  <Label className="text-xs text-foreground/60">ラベル（任意 — 空欄で「開始-終了」が自動設定）</Label>
                   <Input
                     value={slotLabel}
                     onChange={(e) => setSlotLabel(e.target.value)}
@@ -801,7 +801,7 @@ export default function AdminSpacesPage() {
               キャンセル
             </Button>
             <Button
-              className="bg-orange-500 hover:bg-orange-600"
+              className="btn-glow"
               onClick={() => {
                 updateMutation.mutate(undefined, {
                   onSuccess: () => setSettingsOpen(false),

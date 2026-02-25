@@ -69,68 +69,68 @@ export default function AdminSettingsPage() {
   if (authLoading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">予約ルール設定</h1>
+      <main className="max-w-2xl mx-auto px-6 py-10">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-8 animate-fade-in-up">予約ルール設定</h1>
 
-        <Card>
+        <Card className="border-border/40 shadow-premium animate-fade-in-up">
           <CardHeader>
             <CardTitle>基本設定</CardTitle>
-            <CardDescription>予約に関するルールを設定します</CardDescription>
+            <CardDescription className="text-muted-foreground/80">予約に関するルールを設定します</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8">
             {isLoading ? (
-              <div className="animate-pulse">読み込み中...</div>
+              <div className="animate-pulse text-muted-foreground">読み込み中...</div>
             ) : (
               <>
-                <div className="space-y-2">
-                  <Label>予約締切（開始何分前まで予約可能）</Label>
-                  <div className="flex items-center gap-2">
+                <div className="space-y-2.5">
+                  <Label className="text-sm font-medium text-foreground/80">予約締切（開始何分前まで予約可能）</Label>
+                  <div className="flex items-center gap-3">
                     <Input
                       type="number"
                       min={0}
                       value={deadlineMinutes}
                       onChange={(e) => setDeadlineMinutes(Number(e.target.value))}
-                      className="w-24"
+                      className="w-28"
                     />
-                    <span className="text-sm text-muted-foreground">分前</span>
+                    <span className="text-sm text-muted-foreground font-medium">分前</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground/70">
                     例: 10 → 時間帯開始の10分前まで予約可能
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>ペナルティ期間（無断欠席時の予約停止日数）</Label>
-                  <div className="flex items-center gap-2">
+                <div className="space-y-2.5">
+                  <Label className="text-sm font-medium text-foreground/80">ペナルティ期間（無断欠席時の予約停止日数）</Label>
+                  <div className="flex items-center gap-3">
                     <Input
                       type="number"
                       min={0}
                       value={penaltyDays}
                       onChange={(e) => setPenaltyDays(Number(e.target.value))}
-                      className="w-24"
+                      className="w-28"
                     />
-                    <span className="text-sm text-muted-foreground">日間</span>
+                    <span className="text-sm text-muted-foreground font-medium">日間</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>最大同時予約数</Label>
-                  <div className="flex items-center gap-2">
+                <div className="space-y-2.5">
+                  <Label className="text-sm font-medium text-foreground/80">最大同時予約数</Label>
+                  <div className="flex items-center gap-3">
                     <Input
                       type="number"
                       min={1}
                       value={maxReservations}
                       onChange={(e) => setMaxReservations(Number(e.target.value))}
-                      className="w-24"
+                      className="w-28"
                     />
-                    <span className="text-sm text-muted-foreground">件</span>
+                    <span className="text-sm text-muted-foreground font-medium">件</span>
                   </div>
                 </div>
 
                 <Button
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="btn-glow"
                   onClick={() => saveMutation.mutate()}
                   disabled={saveMutation.isPending}
                 >

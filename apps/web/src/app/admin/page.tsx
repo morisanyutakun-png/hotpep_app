@@ -46,55 +46,55 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">管理ダッシュボード</h1>
-          <p className="text-muted-foreground mt-1">今日の状況を確認</p>
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="mb-10 animate-fade-in-up">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">管理ダッシュボード</h1>
+          <p className="text-muted-foreground mt-2 text-base">今日の状況を確認</p>
         </div>
 
         {/* Stats cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10 stagger-children">
+          <Card className="border-border/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground font-normal">今日の予約</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground font-medium">今日の予約</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-orange-600">
+              <div className="text-3xl font-bold tracking-tight text-primary">
                 {isLoading ? "-" : stats?.total_reservations_today}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground font-normal">チェックイン済み</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground font-medium">チェックイン済み</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">
+              <div className="text-3xl font-bold tracking-tight text-emerald-600">
                 {isLoading ? "-" : stats?.checked_in_count}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground font-normal">無断欠席</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground font-medium">無断欠席</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-600">
+              <div className="text-3xl font-bold tracking-tight text-destructive">
                 {isLoading ? "-" : stats?.no_show_count}
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-border/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground font-normal">空席数</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground font-medium">空席数</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">
+              <div className="text-3xl font-bold tracking-tight text-blue-600">
                 {isLoading ? "-" : `${stats?.available_seats}/${stats?.total_seats}`}
               </div>
             </CardContent>
@@ -102,16 +102,16 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick links */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 stagger-children">
           <Link href="/admin/students">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group h-full">
+            <Card className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group h-full border-border/40">
               <CardHeader>
-                <CardTitle className="text-lg group-hover:text-orange-600">
+                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
                   👩‍🎓 生徒管理
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   生徒アカウントの登録・管理・ログイン
                 </p>
               </CardContent>
@@ -119,14 +119,14 @@ export default function AdminDashboard() {
           </Link>
 
           <Link href="/admin/reservations">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group h-full">
+            <Card className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group h-full border-border/40">
               <CardHeader>
-                <CardTitle className="text-lg group-hover:text-orange-600">
+                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
                   📋 予約管理
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   予約一覧の確認・チェックイン・no_show処理
                 </p>
               </CardContent>
@@ -134,14 +134,14 @@ export default function AdminDashboard() {
           </Link>
 
           <Link href="/admin/spaces">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group h-full">
+            <Card className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group h-full border-border/40">
               <CardHeader>
-                <CardTitle className="text-lg group-hover:text-orange-600">
+                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
                   🏢 スペース管理
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   スペースの作成・座席レイアウト編集
                 </p>
               </CardContent>
@@ -149,14 +149,14 @@ export default function AdminDashboard() {
           </Link>
 
           <Link href="/admin/settings">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer group h-full">
+            <Card className="hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group h-full border-border/40">
               <CardHeader>
-                <CardTitle className="text-lg group-hover:text-orange-600">
+                <CardTitle className="text-lg group-hover:text-primary transition-colors duration-200">
                   ⚙️ 設定
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   予約ルール・ペナルティ設定
                 </p>
               </CardContent>

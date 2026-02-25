@@ -174,13 +174,13 @@ export default function AdminStudentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-warm-gradient">
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <main className="max-w-4xl mx-auto px-6 py-10">
+        <div className="flex items-center justify-between mb-8 animate-fade-in-up">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">生徒管理</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">生徒管理</h1>
+            <p className="text-muted-foreground mt-2 text-base">
               生徒アカウントの登録・管理・ログイン
             </p>
           </div>
@@ -242,7 +242,7 @@ export default function AdminStudentsPage() {
             {/* 新規生徒登録ダイアログ */}
             <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
               <DialogTrigger asChild>
-                <Button className="bg-orange-500 hover:bg-orange-600">
+                <Button className="btn-glow">
                   + 生徒を登録
                 </Button>
               </DialogTrigger>
@@ -300,7 +300,7 @@ export default function AdminStudentsPage() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full bg-orange-500 hover:bg-orange-600"
+                    className="w-full btn-glow"
                     disabled={createMutation.isPending}
                   >
                     {createMutation.isPending ? "登録中..." : "生徒を登録"}
@@ -317,9 +317,9 @@ export default function AdminStudentsPage() {
         ) : !students || students.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">まだ生徒が登録されていません</p>
+              <p className="text-muted-foreground mb-5 text-base">まだ生徒が登録されていません</p>
               <Button
-                className="bg-orange-500 hover:bg-orange-600"
+                className="btn-glow"
                 onClick={() => setShowCreateDialog(true)}
               >
                 最初の生徒を登録する
@@ -330,29 +330,29 @@ export default function AdminStudentsPage() {
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">{students.length} 名の生徒</p>
             {students.map((student) => (
-              <Card key={student.id} className="hover:shadow-sm transition-shadow">
-                <CardContent className="py-4 px-5">
+              <Card key={student.id} className="hover:shadow-premium-hover transition-all duration-300 border-border/40">
+                <CardContent className="py-5 px-6">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                        <span className="text-orange-600 font-bold text-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-primary font-bold text-sm">
                           {student.display_name.charAt(0)}
                         </span>
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900">{student.display_name}</span>
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-semibold text-foreground tracking-tight">{student.display_name}</span>
                           {student.is_active ? (
-                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 text-xs">
+                            <Badge variant="outline" className="text-emerald-600 border-emerald-200/60 bg-emerald-50/60 text-[11px] font-medium">
                               有効
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-red-600 border-red-200 bg-red-50 text-xs">
+                            <Badge variant="outline" className="text-destructive border-destructive/20 bg-destructive/5 text-[11px] font-medium">
                               無効
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{student.email}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">{student.email}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -459,7 +459,7 @@ export default function AdminStudentsPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-orange-500 hover:bg-orange-600"
+                  className="flex-1 btn-glow"
                   disabled={updateMutation.isPending}
                 >
                   {updateMutation.isPending ? "保存中..." : "保存"}
