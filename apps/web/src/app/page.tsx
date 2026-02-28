@@ -64,12 +64,6 @@ export default function HomePage() {
                 >
                   ログアウト
                 </Button>
-                <Button
-                  className="btn-glow"
-                  onClick={() => { logout(); router.push("/register"); }}
-                >
-                  アカウント再作成
-                </Button>
               </div>
             </CardContent>
           </Card>
